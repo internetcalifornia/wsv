@@ -40,7 +40,7 @@ func TestReadColumnAndDataWithSpaces(t *testing.T) {
 	str := strings.NewReader(file)
 	r := wsv.NewReader(str)
 	fields, err := r.Read()
-	r.ReadAll()
+
 	if err != nil {
 		t.Error(err)
 	}
