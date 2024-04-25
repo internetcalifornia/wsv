@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strings"
+
 	"unicode/utf8"
 )
 
@@ -58,11 +59,13 @@ func (e *ParseError) Error() string {
 
 // These are the errors that can be returned in ParseError.Err.
 var (
-	ErrBareQuote    = errors.New("bare \" in non-quoted-field")
-	ErrQuote        = errors.New("extraneous or missing \" in quoted-field")
-	ErrFieldCount   = errors.New("wrong number of fields")
-	ErrLineFeedTerm = errors.New("line feed terminated before the line end end")
-	ErrInvalidNull  = errors.New("null `-` specifier cannot be included without white space surrounding, unless it is the last value in the line. To record a literal `-` please wrap the value in double quotes")
+	ErrBareQuote        = errors.New("bare \" in non-quoted-field")
+	ErrQuote            = errors.New("extraneous or missing \" in quoted-field")
+	ErrFieldCount       = errors.New("wrong number of fields")
+	ErrLineFeedTerm     = errors.New("line feed terminated before the line end end")
+	ErrInvalidNull      = errors.New("null `-` specifier cannot be included without white space surrounding, unless it is the last value in the line. To record a literal `-` please wrap the value in double quotes")
+	ErrCommentPlacement = errors.New("comments should be the last elements in a row, if immediate preceding lines are null, they cannot be omitted and must be explicitly declared")
+	ErrReaderEnded      = errors.New("reader ended, nothing left to read")
 )
 
 type Reader struct {
@@ -76,6 +79,7 @@ type Reader struct {
 	IsTabular           bool
 	r                   *bufio.Reader
 	NullTrailingColumns bool
+	ended               bool
 }
 
 func (r *Reader) Headers() []string {
@@ -220,7 +224,8 @@ func ParseLine(n int, line []byte) ([]LineField, error) {
 	escapeNewLinePos := 0
 	isNull := false
 	var startDoubleQuote int = 0
-	s := ""
+
+	data := []byte{}
 	str := make([]LineField, 0)
 lineLoop:
 	for i, b0 := range line {
@@ -259,19 +264,20 @@ lineLoop:
 			break lineLoop
 		case '#':
 			if !doubleQuoted {
-				s = s + string(line[i:])
+
+				data = append(data, line[i:]...)
 				// since we are copying to the end of line we should remove the suffix of the line feed
-				s = strings.TrimSuffix(s, string('\n'))
-				str = append(str, LineField{IsComment: true, Value: s, IsNull: isNull})
-				s = ""
+				data = bytes.TrimSuffix(data, []byte{'\n'})
+				str = append(str, LineField{IsComment: true, Value: string(data), IsNull: isNull})
+				// s = ""
+				data = []byte{}
 				break lineLoop
 			}
-			s = s + string(r)
+			data = append(data, byte(r))
 			continue
 		case '"':
-
 			if bytesToString(b3, b2, b1) == `"/"` {
-				s = strings.TrimSuffix(s, string('/')) + string('\n')
+				data = append(bytes.TrimSuffix(data, []byte{'/'}), byte('\n'))
 				escapeNewLinePos = i
 				// escape new line
 				continue
@@ -282,7 +288,7 @@ lineLoop:
 				} else if len(line)-1 > i+2 && nextRune(line[i+1:]) == '/' && nextRune(line[i+2:]) == '"' {
 					// edge case field starts with newline
 				} else {
-					s = s + `"`
+					data = append(data, byte('"'))
 					continue
 				}
 			}
@@ -296,8 +302,10 @@ lineLoop:
 			}
 			fallthrough
 		default:
+
 			if bytesToString(b3, b2, b1) == `"/"` {
-				s = strings.TrimSuffix(s, string('/')) + string('\n')
+				data = append(bytes.TrimSuffix(data, []byte{'/'}), byte('\n'))
+				// s = strings.TrimSuffix(s, string('/')) + string('\n')
 			}
 			if isNull && (len(line)-1 == i) {
 				str = append(str, LineField{IsComment: false, Value: "", IsNull: isNull})
@@ -306,7 +314,7 @@ lineLoop:
 			// currently flagged as null but has more characters left to parse and the next immediate character is not a white space or the end of the string, and is not surround by double quotes we have an invalid
 			if isNull && len(line)-1 > i && bytes.IndexFunc(line[i:], isFieldDelimiter) != 1 {
 				if b2 != nil && rune(*b2) == '-' && bytes.IndexFunc([]byte{*b1}, isFieldDelimiter) == 0 {
-					s = ""
+					data = []byte{}
 				} else {
 					return str, &ParseError{Column: i, Err: ErrInvalidNull}
 				}
@@ -321,14 +329,17 @@ lineLoop:
 			}
 			isDelim := isFieldDelimiter(r)
 			if isDelim && (!doubleQuoted || endedDoubleQuote) {
+				if len(data) == 0 && !isNull {
+					continue
+				}
 				doubleQuoted = false
 				endedDoubleQuote = false
-				str = append(str, LineField{IsComment: false, Value: s, IsNull: isNull})
+				str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 				isNull = false
-				s = ""
+				data = []byte{}
 				continue
 			}
-			s = s + string(r)
+			data = append(data, byte(r))
 			continue
 		}
 	}
@@ -337,8 +348,8 @@ lineLoop:
 		nb := neighborBytes(startDoubleQuote, line)
 		return str, &ParseError{Column: startDoubleQuote, Err: ErrBareQuote, Line: n, NeighborBytes: nb}
 	}
-	if len(s) > 0 {
-		str = append(str, LineField{IsComment: false, Value: s, IsNull: isNull})
+	if len(data) > 0 {
+		str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 	}
 	return str, nil
 }
@@ -385,12 +396,17 @@ func (r *Reader) CurrentRow() int {
 // Read returns a partial record along with the parse error.
 // The partial record contains all fields read before the error.
 // If there is no data left to be read, Read returns an empty RecordField slice, io.EOF.
+// Subsequent calls to Read after io.EOF returns an empty RecordFieldSlice, wsv.ErrReaderEnded
 func (r *Reader) Read() ([]RecordField, error) {
 	var line []byte
 	var errRead error
 	records := make([]RecordField, 0)
+	if r.ended {
+		return records, ErrReaderEnded
+	}
 	line, errRead = r.readLine()
 	if errRead == io.EOF {
+		r.ended = true
 		return records, io.EOF
 	}
 	fields, errRead := ParseLine(r.numLine, line)
@@ -405,6 +421,10 @@ func (r *Reader) Read() ([]RecordField, error) {
 			continue
 		}
 		if field.IsComment {
+			// comments must be the first and only value or the last value parsed, if preceding fields are not explicitly defined return an error
+			if r.numLine > 1 && i < len(r.headers) && i != 0 {
+				return records, &ParseError{Line: r.numLine, Column: 0, Err: ErrCommentPlacement}
+			}
 			d := RecordField{reader: r, IsNull: false, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: field.Value, IsComment: true}
 			r.Comments[r.numLine] = &d
 			records = append(records, d)

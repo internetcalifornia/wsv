@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.wsv": "plaintext"
+  },
+  "[plaintext]": {
+    "editor.insertSpaces": false
+  }
+}
