@@ -219,14 +219,16 @@ func ParseLine(n int, line []byte) ([]LineField, error) {
 	var b2 *byte = nil
 	var b3 *byte = nil
 	var b4 *byte = nil
+
 	doubleQuoted := false
 	endedDoubleQuote := false
-	escapeNewLinePos := 0
-	isNull := false
-	var startDoubleQuote int = 0
 
+	isNull := false
+	startDoubleQuote := 0
+	escapedDoubleQuote := 0
 	data := []byte{}
 	str := make([]LineField, 0)
+
 lineLoop:
 	for i, b0 := range line {
 		if b4 != nil {
@@ -264,7 +266,6 @@ lineLoop:
 			break lineLoop
 		case '#':
 			if !doubleQuoted {
-
 				data = append(data, line[i:]...)
 				// since we are copying to the end of line we should remove the suffix of the line feed
 				data = bytes.TrimSuffix(data, []byte{'\n'})
@@ -278,24 +279,34 @@ lineLoop:
 		case '"':
 			if bytesToString(b3, b2, b1) == `"/"` {
 				data = append(bytes.TrimSuffix(data, []byte{'/'}), byte('\n'))
-				escapeNewLinePos = i
-				// escape new line
 				continue
 			}
-			if i > escapeNewLinePos && b2 != nil && rune(*b2) == '"' && (b3 == nil || rune(*b3) != '"') {
-				if len(line)-1 > i+1 && isFieldDelimiter(nextRune(line[i+1:])) && b3 != nil && rune(*b3) == '/' {
-					// edge case field ends with newline
-				} else if len(line)-1 > i+2 && nextRune(line[i+1:]) == '/' && nextRune(line[i+2:]) == '"' {
-					// edge case field starts with newline
-				} else {
-					data = append(data, byte('"'))
-					continue
-				}
+
+			if (b2 == nil || isFieldDelimiter(rune(*b2))) && !doubleQuoted {
+				doubleQuoted = true
+				startDoubleQuote = i
+				// fmt.Println("start:", i)
+				continue
 			}
-			if doubleQuoted && ((len(line)-1 == i) || (len(line)-1 > i && isFieldDelimiter(nextRune(line[i+1:])))) {
+
+			if (b3 == nil || isFieldDelimiter(rune(*b3))) && b2 != nil && rune(*b2) == '"' && (len(line)-1 == i || (len(line)-1 > i && isFieldDelimiter(nextRune(line[i+1:])))) {
+				data = []byte{}
+				str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 				doubleQuoted = false
-				endedDoubleQuote = true
+				continue
 			}
+
+			if b2 != nil && rune(*b2) == '"' && (b3 == nil || rune(*b3) != '"') && !(len(line)-1 > i+1 && isFieldDelimiter(nextRune(line[i+1:])) && b3 != nil && rune(*b3) == '/') && !(len(line)-1 > i+2 && nextRune(line[i+1:]) == '/' && nextRune(line[i+2:]) == '"') {
+				data = append(data, byte('"'))
+				escapedDoubleQuote = i
+				continue
+			}
+
+			if doubleQuoted && (len(line)-1 == i || (len(line)-1 > i && isFieldDelimiter(nextRune(line[i+1:])))) && (b2 == nil || rune(*b2) != '"' || i > escapedDoubleQuote) {
+				doubleQuoted = false
+				// fmt.Println("end  :", i)
+			}
+
 		case '-':
 			if r == '-' && (b2 == nil || isFieldDelimiter(rune(*b2))) && !doubleQuoted {
 				isNull = true
@@ -305,35 +316,41 @@ lineLoop:
 
 			if bytesToString(b3, b2, b1) == `"/"` {
 				data = append(bytes.TrimSuffix(data, []byte{'/'}), byte('\n'))
-				// s = strings.TrimSuffix(s, string('/')) + string('\n')
 			}
 			if isNull && (len(line)-1 == i) {
 				str = append(str, LineField{IsComment: false, Value: "", IsNull: isNull})
 				break lineLoop
 			}
-			// currently flagged as null but has more characters left to parse and the next immediate character is not a white space or the end of the string, and is not surround by double quotes we have an invalid
+			// currently flagged as null but has more characters left to parse and
 			if isNull && len(line)-1 > i && bytes.IndexFunc(line[i:], isFieldDelimiter) != 1 {
+				// the next immediate character is a white space
 				if b2 != nil && rune(*b2) == '-' && bytes.IndexFunc([]byte{*b1}, isFieldDelimiter) == 0 {
 					data = []byte{}
 				} else {
+					// and is not surround by double quotes we have an invalid
 					return str, &ParseError{Column: i, Err: ErrInvalidNull}
 				}
 			}
-			if (b3 == nil || rune(*b3) != '"') && (b2 != nil && rune(*b2) == '"') && startDoubleQuote <= i {
-				if strings.HasSuffix(bytesToString(b4, b3, b2, b1), `"/`) ||
-					strings.HasPrefix(bytesToString(b4, b3, b2, b1), `"/"`) {
-				} else {
-					startDoubleQuote = i - 1
-					doubleQuoted = true
-				}
-			}
+
+			// if (b3 == nil || rune(*b3) != '"') && (b2 != nil && rune(*b2) == '"') && startDoubleQuote <= i {
+			// 	if strings.HasSuffix(bytesToString(b4, b3, b2, b1), `"/`) ||
+			// 		strings.HasPrefix(bytesToString(b4, b3, b2, b1), `"/"`) {
+			// 	} else {
+			// 		startDoubleQuote = i - 1
+			// 		doubleQuoted = true
+			// 	}
+			// }
+
 			isDelim := isFieldDelimiter(r)
 			if isDelim && (!doubleQuoted || endedDoubleQuote) {
 				if len(data) == 0 && !isNull {
 					continue
 				}
-				doubleQuoted = false
-				endedDoubleQuote = false
+				if string(data) == `"` {
+					nb := neighborBytes(i, line)
+					return str, &ParseError{Line: n, Err: ErrBareQuote, Column: i, NeighborBytes: nb}
+				}
+
 				str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 				isNull = false
 				data = []byte{}
@@ -345,10 +362,15 @@ lineLoop:
 	}
 	if doubleQuoted {
 		// the following string value could not be parsed correctly
+
 		nb := neighborBytes(startDoubleQuote, line)
 		return str, &ParseError{Column: startDoubleQuote, Err: ErrBareQuote, Line: n, NeighborBytes: nb}
 	}
 	if len(data) > 0 {
+		if string(data) == `"` {
+			nb := neighborBytes(startDoubleQuote, line)
+			return str, &ParseError{Line: n, Err: ErrBareQuote, Column: startDoubleQuote, NeighborBytes: nb}
+		}
 		str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 	}
 	return str, nil
@@ -371,6 +393,30 @@ func neighborBytes(i int, line []byte) (neighbor []byte) {
 	}
 	neighbor = line[p:s]
 	return neighbor
+}
+
+func IsLiteralEmptyString(b []*byte) bool {
+	if len(b) != 4 {
+		return false
+	}
+	b0 := b[0]
+	b1 := b[1]
+	b2 := b[2]
+	b3 := b[3]
+
+	if rune(*b1) != '"' || rune(*b2) != '"' {
+		return false
+	}
+
+	if b0 != nil && !isFieldDelimiter(rune(*b0)) {
+		return false
+	}
+
+	if b3 != nil && !isFieldDelimiter(rune(*b3)) {
+		return false
+	}
+
+	return true
 }
 
 func bytesToString(s ...*byte) string {
@@ -505,4 +551,14 @@ func (r *Reader) readLine() ([]byte, error) {
 	// trim the trailing new line
 	line = bytes.TrimSuffix(line, []byte("\n"))
 	return line, err
+}
+
+func unwrapByteToString(b *byte) string {
+	if b == nil {
+		return "<nil>"
+	}
+	if rune(*b) == '\t' {
+		return "\\t"
+	}
+	return string(*b)
 }

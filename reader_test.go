@@ -35,6 +35,84 @@ func TestQuotedValuesLine(t *testing.T) {
 	}
 }
 
+func toPointer[t any](a t) *t {
+	return &a
+}
+
+func TestIsEmptyStringLiteral(t *testing.T) {
+	t1 := []byte{'\t', '"', '"', '\t'}
+	t1_p := []*byte{}
+	for _, i := range t1 {
+		t1_p = append(t1_p, toPointer(i))
+	}
+
+	t2 := []byte{'"', '"', '\t'}
+	t2_p := []*byte{nil}
+	for _, i := range t2 {
+		t2_p = append(t2_p, toPointer(i))
+	}
+
+	t3 := []byte{'"', '"'}
+	t3_p := []*byte{nil}
+	for _, i := range t3 {
+		t3_p = append(t3_p, toPointer(i))
+	}
+	t3_p = append(t3_p, nil)
+
+	t4 := []byte{' ', '"', '"', ' '}
+	t4_p := []*byte{}
+	for _, i := range t4 {
+		t4_p = append(t4_p, toPointer(i))
+	}
+
+	t5 := []byte{'\t', '"', '"'}
+	t5_p := []*byte{}
+	for _, i := range t5 {
+		t5_p = append(t5_p, toPointer(i))
+	}
+	t5_p = append(t5_p, nil)
+
+	if !wsv.IsLiteralEmptyString(t1_p) {
+		t.Error("failed test 1")
+	}
+	if !wsv.IsLiteralEmptyString(t2_p) {
+		t.Error("failed test 2")
+	}
+	if !wsv.IsLiteralEmptyString(t3_p) {
+		t.Error("failed test 3")
+	}
+	if !wsv.IsLiteralEmptyString(t4_p) {
+		t.Error("failed test 4")
+	}
+	if !wsv.IsLiteralEmptyString(t5_p) {
+		t.Error("failed test 5")
+	}
+}
+
+func TestEmptyStringLiteral(t *testing.T) {
+	line := `India						""					🇮🇳			  -`
+	r, err := wsv.ParseLine(1, []byte(line))
+	if err != nil {
+		t.Error(err)
+	}
+	if len(r) != 4 {
+		t.Errorf("Parse line expected 4 record but got %+v (%d)", r, len(r))
+		return
+	}
+	if r[0].IsNull || r[0].Value != "India" {
+		t.Errorf(`expected field 1 to be India but got %+v\n`, r[0])
+	}
+	if r[1].IsNull || r[1].Value != "" {
+		t.Errorf(`expected field 2 to be [EMPTY STRING] but got %+v\n`, r[1])
+	}
+	if r[2].IsNull || r[2].Value != "🇮🇳" {
+		t.Errorf(`expected field 3 to be 🇮🇳 but got %+v\n`, r[2])
+	}
+	if !r[3].IsNull || r[3].Value != "" {
+		t.Errorf(`expected field 3 to be [NULL] but got %+v\n`, r[2])
+	}
+}
+
 func TestReadColumnAndDataWithSpaces(t *testing.T) {
 	lines := make([]string, 0)
 	lines = append(lines, `"Given Name" "Family Name" "Date of Birth" "Favorite Color"`)
@@ -516,6 +594,24 @@ func TestParseInvalidDashValue(t *testing.T) {
 	}
 }
 
+func TestParseBareDoubleQuote(t *testing.T) {
+	line := `India						"""					🇮🇳			  -`
+	r, err := wsv.ParseLine(1, []byte(line))
+	if err == nil {
+		t.Error("Should have returned a bare double quote error", r)
+		return
+	}
+}
+
+func TestParseBareDoubleQuoteLastChar(t *testing.T) {
+	line := `India						"""`
+	r, err := wsv.ParseLine(1, []byte(line))
+	if err == nil {
+		t.Error("Should have returned a bare double quote error", "["+r[1].Value+"]")
+		return
+	}
+}
+
 func TestParseLineNullMiddleValue(t *testing.T) {
 	line := `john -	hippo`
 	r, err := wsv.ParseLine(1, []byte(line))
@@ -612,7 +708,7 @@ func TestParseLineWithDoubleQuotes(t *testing.T) {
 }
 
 func TestParseLineWithStartingDoubleQuotes(t *testing.T) {
-	line := `john ""hungry""`
+	line := `john """hungry"""`
 	r, err := wsv.ParseLine(1, []byte(line))
 	if err != nil {
 		t.Error(err)
@@ -648,9 +744,21 @@ func TestParseInvalidLine(t *testing.T) {
 	}
 }
 
+func TestParseComplexDoubleQuoteLine(t *testing.T) {
+	line := `"""fName""s" """lName""" """dob""" """gender"""`
+	fields, err := wsv.ParseLine(1, []byte(line))
+	if err != nil {
+		t.Error(err)
+	}
+	if len(fields) != 4 {
+		t.Errorf("Parse line expected 4 record but got %+v (%d)", fields, len(fields))
+		return
+	}
+}
+
 func TestReadColumnAndDataWithDoubleQuotes(t *testing.T) {
 	lines := make([]string, 0)
-	lines = append(lines, `""fName""s ""lName"" ""dob"" ""gender""`)
+	lines = append(lines, `"""fName""s" """lName""" """dob""" """gender"""`)
 	lines = append(lines, `john "hungry ""doe""" 2023-01-01 M`)
 	lines = append(lines, `jane smith 2024-01-01 F`)
 	file := strings.Join(lines, string('\n'))
@@ -709,7 +817,7 @@ func TestReadColumnAndDataWithDoubleQuotes(t *testing.T) {
 
 func TestNullRemainingColumns(t *testing.T) {
 	lines := make([]string, 0)
-	lines = append(lines, `""fName""s ""lName"" ""dob"" ""gender""`)
+	lines = append(lines, `"""fName""s" """lName""" """dob""" """gender"""`)
 	lines = append(lines, `john "hungry ""doe""" 2023-01-01`)
 	lines = append(lines, `jane smith 2024-01-01`)
 	file := strings.Join(lines, string('\n'))
@@ -1700,15 +1808,15 @@ func TestReadComplexValues(t *testing.T) {
 		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇯🇵" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇯🇵] but got", fields[2].Value, "instead")
+	if fields[2].Value != "🇯🇵🇯🇵" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇯🇵🇯🇵] but got", fields[2].Value, "instead")
 	}
 	if fields[2].FieldName != "Emoji of Flag" {
 		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
 	}
 
 	if fields[3].Value != "Japan is a volcanic archipelago with over 100 active volcanoes."+string('\n')+"The currency is the yen and the symbol is ¥." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value Japan is a volcanic archipelago with over 100 active volcanoes.\\nThe currency is the yen and the symbol is ¥.] but got", fields[3].FieldName, "instead")
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Japan is a volcanic archipelago with over 100 active volcanoes.\\nThe currency is the yen and the symbol is ¥.] but got", fields[3].FieldName, "instead")
 	}
 	if fields[3].FieldName != "Interesting Facts" {
 		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
@@ -1716,5 +1824,252 @@ func TestReadComplexValues(t *testing.T) {
 
 	if fields[4].Value != "#has half-width characters" || !fields[4].IsComment {
 		t.Error("expect row", r.CurrentRow(), "field 5 to be a comment but got", fields[3].Value, "instead")
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+		return
+	}
+
+	if fields[0].Value != "Spain" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Spain] but got", fields[0].Value, "instead")
+	}
+	if fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
+	}
+
+	if fields[1].Value != "Madrid" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Madrid] but got", fields[1].Value, "instead")
+	}
+	if fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	}
+
+	if fields[2].Value != "🇪🇸" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇪🇸] but got", fields[2].Value, "instead")
+	}
+	if fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
+	}
+
+	if fields[3].Value != "Spain has the second highest number of UNESCO World Heritage Sites in the world." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Spain has the second highest number of UNESCO World Heritage Sites in the world.] but got", fields[3].FieldName, "instead")
+	}
+	if fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+		return
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+		return
+	}
+
+	if fields[0].Value != "United Kingdom" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [United Kingdom] but got", fields[0].Value, "instead")
+	}
+	if fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
+	}
+
+	if fields[1].Value != "London" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [London] but got", fields[1].Value, "instead")
+	}
+	if fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	}
+
+	if fields[2].Value != "🇬🇧" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇬🇧] but got", fields[2].Value, "instead")
+	}
+	if fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
+	}
+
+	if fields[3].Value != "The United Kingdom is a parliamentary monarchy with a rich history dating back centuries." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The United Kingdom is a parliamentary monarchy with a rich history dating back centuries.] but got", fields[3].FieldName, "instead")
+	}
+	if fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+		return
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 1 {
+		t.Error("expected line", r.CurrentRow(), "to have 1 fields but got", len(fields), "instead")
+		return
+	}
+
+	if fields[0].Value != "# emphasis on 50 with double quotes" || !fields[0].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [# emphasis on 50 with double quotes] but got", fields[0].Value, "instead")
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+		return
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead", fields)
+		return
+	}
+
+	if fields[0].Value != "United States of America" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [United States of America] but got", fields[0].Value, "instead")
+	}
+	if fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
+	}
+
+	if fields[1].Value != "Washington D.C." {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Washington D.C.] but got", fields[1].Value, "instead")
+	}
+	if fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	}
+
+	if fields[2].Value != "🇺🇸 🏴‍☠️" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇺🇸 🏴‍☠️] but got", fields[2].Value, "instead")
+	}
+	if fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
+	}
+
+	if fields[3].Value != "The United States of America is a federal republic with \"50\" states." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The United States of America is a federal republic with \"50\" states.] but got", fields[3].FieldName, "instead")
+	}
+	if fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+		return
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 1 {
+		t.Error("expected line", r.CurrentRow(), "to have 1 fields but got", len(fields), "instead")
+		return
+	}
+
+	if fields[0].Value != "# update the remaining" || !fields[0].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [# update the remaining] but got", fields[0].Value, "instead")
+	}
+
+	fields, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+		return
+	}
+
+	if fields[0].Value != "India" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [India] but got", fields[0].Value, "instead")
+	}
+	if fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
+	}
+
+	if fields[1].Value != "" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [] but got", fields[1].Value, "instead")
+	}
+	if fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	}
+
+	if fields[2].Value != "🇮🇳" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇮🇳] but got", fields[2].Value, "instead")
+	}
+	if fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
+	}
+
+	if fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].FieldName, "instead")
+	}
+	if fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	}
+
+}
+
+func TestParseLineWithEmojisAndEscapedDoubleQuotesSurroundedByWhitespace(t *testing.T) {
+	line := `"United States of America"  "Washington D.C." 	"flag"           "The United States of America is a federal republic with ""50"" states."`
+	fields, err := wsv.ParseLine(1, []byte(line))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(fields) != 4 {
+		t.Error("expected line to have 4 fields but got", len(fields), "instead", fields)
+		return
+	}
+
+	if fields[0].Value != "United States of America" {
+		t.Error("field 1 to be [United States of America] but got", fields[0].Value, "instead")
+	}
+	if fields[1].Value != "Washington D.C." {
+		t.Error("field 2 to be [Washington D.C.] but got", fields[1].Value, "instead")
+	}
+	if fields[2].Value != "flag" {
+		t.Error("field 3 to be [flag] but got", fields[2].Value, "instead")
+	}
+	if fields[3].Value != "The United States of America is a federal republic with \"50\" states." {
+		t.Error("field 4 to have value [The United States of America is a federal republic with \"50\" states.] but got", fields[3].Value, "instead")
 	}
 }
