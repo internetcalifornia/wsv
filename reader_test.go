@@ -2049,7 +2049,7 @@ func TestReadComplexValues(t *testing.T) {
 }
 
 func TestParseLineWithEmojisAndEscapedDoubleQuotesSurroundedByWhitespace(t *testing.T) {
-	line := `"United States of America"  "Washington D.C." 	"flag"           "The United States of America is a federal republic with ""50"" states."`
+	line := `"United States of America"  "Washington D.C." 	"🇺🇸 🏴‍☠️"           "The United States of America is a federal republic with ""50"" states."`
 	fields, err := wsv.ParseLine(1, []byte(line))
 	if err != nil {
 		t.Error(err)
@@ -2066,8 +2066,8 @@ func TestParseLineWithEmojisAndEscapedDoubleQuotesSurroundedByWhitespace(t *test
 	if fields[1].Value != "Washington D.C." {
 		t.Error("field 2 to be [Washington D.C.] but got", fields[1].Value, "instead")
 	}
-	if fields[2].Value != "flag" {
-		t.Error("field 3 to be [flag] but got", fields[2].Value, "instead")
+	if fields[2].Value != "🇺🇸 🏴‍☠️" {
+		t.Error("field 3 to be [🇺🇸 🏴‍☠️] but got", fields[2].Value, "instead")
 	}
 	if fields[3].Value != "The United States of America is a federal republic with \"50\" states." {
 		t.Error("field 4 to have value [The United States of America is a federal republic with \"50\" states.] but got", fields[3].Value, "instead")
