@@ -87,7 +87,6 @@ func (r *Reader) Headers() []string {
 }
 
 type RecordField struct {
-	reader     *Reader
 	IsNull     bool
 	Value      string
 	FieldIndex int
@@ -221,14 +220,14 @@ func ParseLine(n int, line []byte) ([]LineField, error) {
 	var b4 *byte = nil
 
 	doubleQuoted := false
-	endedDoubleQuote := false
 
 	isNull := false
 	startDoubleQuote := 0
 	escapedDoubleQuote := 0
 	data := []byte{}
 	str := make([]LineField, 0)
-
+	// trim the trailing white space from the line
+	line = bytes.TrimRightFunc(line, isFieldDelimiter)
 lineLoop:
 	for i, b0 := range line {
 		if b4 != nil {
@@ -285,7 +284,6 @@ lineLoop:
 			if (b2 == nil || isFieldDelimiter(rune(*b2))) && !doubleQuoted {
 				doubleQuoted = true
 				startDoubleQuote = i
-				// fmt.Println("start:", i)
 				continue
 			}
 
@@ -304,11 +302,12 @@ lineLoop:
 
 			if doubleQuoted && (len(line)-1 == i || (len(line)-1 > i && isFieldDelimiter(nextRune(line[i+1:])))) && (b2 == nil || rune(*b2) != '"' || i > escapedDoubleQuote) {
 				doubleQuoted = false
-				// fmt.Println("end  :", i)
+
 			}
 
 		case '-':
 			if r == '-' && (b2 == nil || isFieldDelimiter(rune(*b2))) && !doubleQuoted {
+				// fmt.Println("setting row", n, "null flag from column", i)
 				isNull = true
 			}
 			fallthrough
@@ -330,6 +329,7 @@ lineLoop:
 					// and is not surround by double quotes we have an invalid
 					return str, &ParseError{Column: i, Err: ErrInvalidNull}
 				}
+
 			}
 
 			// if (b3 == nil || rune(*b3) != '"') && (b2 != nil && rune(*b2) == '"') && startDoubleQuote <= i {
@@ -342,7 +342,7 @@ lineLoop:
 			// }
 
 			isDelim := isFieldDelimiter(r)
-			if isDelim && (!doubleQuoted || endedDoubleQuote) {
+			if isDelim && (!doubleQuoted) {
 				if len(data) == 0 && !isNull {
 					continue
 				}
@@ -462,7 +462,7 @@ func (r *Reader) Read() ([]RecordField, error) {
 	for i, field := range fields {
 		if r.numLine == 1 && r.IncludesHeader && !field.IsComment {
 			r.headers = append(r.headers, field.Value)
-			d := RecordField{reader: r, IsNull: false, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: true, FieldName: field.Value, IsComment: false}
+			d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: true, FieldName: field.Value, IsComment: false}
 			records = append(records, d)
 			continue
 		}
@@ -471,7 +471,7 @@ func (r *Reader) Read() ([]RecordField, error) {
 			if r.numLine > 1 && i < len(r.headers) && i != 0 {
 				return records, &ParseError{Line: r.numLine, Column: 0, Err: ErrCommentPlacement}
 			}
-			d := RecordField{reader: r, IsNull: false, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: field.Value, IsComment: true}
+			d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: field.Value, IsComment: true}
 			r.Comments[r.numLine] = &d
 			records = append(records, d)
 			continue
@@ -481,7 +481,7 @@ func (r *Reader) Read() ([]RecordField, error) {
 			return records, &ParseError{Line: r.numLine, Column: 0, Err: ErrFieldCount}
 		}
 		fieldName := columnName(r.headers, i)
-		d := RecordField{reader: r, IsNull: false, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: fieldName}
+		d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: fieldName}
 		records = append(records, d)
 	}
 
@@ -551,14 +551,4 @@ func (r *Reader) readLine() ([]byte, error) {
 	// trim the trailing new line
 	line = bytes.TrimSuffix(line, []byte("\n"))
 	return line, err
-}
-
-func unwrapByteToString(b *byte) string {
-	if b == nil {
-		return "<nil>"
-	}
-	if rune(*b) == '\t' {
-		return "\\t"
-	}
-	return string(*b)
 }
