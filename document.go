@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -51,7 +52,7 @@ type document struct {
 	Tabular          bool
 	EmitHeaders      bool
 	lines            []*documentLine
-	maxColumnWidth   map[int]int
+	MaxColumnWidth   map[int]int
 	padding          []rune
 	currentWriteLine int
 	currentField     int
@@ -67,10 +68,10 @@ func NewDocument() *document {
 		lines:            make([]*documentLine, 0),
 		currentWriteLine: 0,
 		currentField:     0,
-		maxColumnWidth:   make(map[int]int, 0),
+		MaxColumnWidth:   make(map[int]int, 0),
 		startedWriting:   false,
 		// The runes in between data values
-		padding:    []rune{' '},
+		padding:    []rune{' ', ' '},
 		Headers:    make([]string, 0),
 		HasHeaders: true,
 	}
@@ -128,9 +129,10 @@ func (doc *document) ResetWrite() {
 	doc.currentWriteLine = 0
 }
 
-func calculateFieldLength(f RecordField) int {
-	v := f.serializeText()
-	return len(v)
+func CalculateFieldLength(f RecordField) int {
+	v := f.SerializeText()
+
+	return utf8.RuneCountInString(v)
 }
 
 // Write, writes the currently line to a slice of bytes based on the current line in process, calling write will increment the counter after each successful call.
@@ -153,15 +155,15 @@ func (doc *document) Write() ([]byte, error) {
 	}
 
 	for i, field := range line.fields {
-		mw := doc.maxColumnWidth[i]
-		v := field.serializeText()
-		p := len(v)
-		if doc.Tabular && (len(line.fields)-1 != i || (len(line.fields)-1 == i && len(line.Comment) > 0)) {
+		mw := doc.MaxColumnWidth[i]
+		v := field.SerializeText()
+		p := utf8.RuneCountInString(v)
+		if doc.Tabular && (len(line.fields)-1 != i) {
 			for {
 				// pad value with single spaces unless it's the last column or line has a comment
 				if p < mw {
 					v = fmt.Sprintf("%s%s", v, " ")
-					p = len(v)
+					p = utf8.RuneCountInString(v)
 					continue
 				}
 				break
@@ -176,7 +178,13 @@ func (doc *document) Write() ([]byte, error) {
 		}
 	}
 	if len(line.Comment) > 0 {
-		buf = append(buf, []byte(fmt.Sprintf("#%s", line.Comment))...)
+		if len(buf) > 0 {
+			buf = append(buf, runeToBytes(doc.padding)...)
+			buf = append(buf, []byte(fmt.Sprintf("#%s", line.Comment))...)
+		} else {
+			buf = append(buf, []byte(fmt.Sprintf("#%s", line.Comment))...)
+
+		}
 	}
 	buf = append(buf, byte('\n'))
 	doc.currentWriteLine += 1
@@ -226,17 +234,29 @@ func (doc *document) CommentFor(ln int) (string, error) {
 	return "", msg
 }
 
-func (f *RecordField) serializeText() string {
+func (f *RecordField) SerializeText() string {
+	wrapped := false
 	if f.IsNull {
 		return "-"
 	}
 	v := f.Value
+
 	v = strings.ReplaceAll(v, `"`, `""`)
-	if strings.Contains(v, "\n") {
+	if strings.Contains(v, `""`) && !wrapped {
+		wrapped = true
+		v = fmt.Sprintf(`"%s"`, v)
+	}
+	if strings.Contains(v, "-") {
+		wrapped = true
 		v = fmt.Sprintf(`"%s"`, v)
 	}
 	v = strings.ReplaceAll(v, "\n", `"/"`)
-	if strings.ContainsFunc(v, isFieldDelimiter) {
+	if strings.Contains(v, `"/"`) && !wrapped {
+		wrapped = true
+		v = fmt.Sprintf(`"%s"`, v)
+	}
+	if strings.ContainsFunc(v, isFieldDelimiter) && !wrapped {
+		wrapped = true
 		v = fmt.Sprintf(`"%s"`, v)
 	}
 	if v == "" {
@@ -245,19 +265,19 @@ func (f *RecordField) serializeText() string {
 	return v
 }
 
-func (doc *document) calculateMaxFieldLengths() {
+func (doc *document) CalculateMaxFieldLengths() {
 	for _, line := range doc.lines {
 		if line == nil {
 			continue
 		}
 		for fieldInd, field := range line.fields {
-			fw := calculateFieldLength(field)
-			if cw, ok := line.doc.maxColumnWidth[fieldInd]; ok {
+			fw := CalculateFieldLength(field)
+			if cw, ok := line.doc.MaxColumnWidth[fieldInd]; ok {
 				if cw < fw {
-					line.doc.maxColumnWidth[fieldInd] = fw
+					line.doc.MaxColumnWidth[fieldInd] = fw
 				}
 			} else {
-				line.doc.maxColumnWidth[fieldInd] = fw
+				line.doc.MaxColumnWidth[fieldInd] = fw
 			}
 		}
 	}
@@ -295,13 +315,13 @@ func (line *documentLine) Append(val string) error {
 	}
 	field.FieldIndex = fieldInd
 	line.fields = append(line.fields, field)
-	fw := calculateFieldLength(field)
-	if cw, ok := line.doc.maxColumnWidth[fieldInd]; ok {
+	fw := CalculateFieldLength(field)
+	if cw, ok := line.doc.MaxColumnWidth[fieldInd]; ok {
 		if cw < fw {
-			line.doc.maxColumnWidth[fieldInd] = fw
+			line.doc.MaxColumnWidth[fieldInd] = fw
 		}
 	} else {
-		line.doc.maxColumnWidth[fieldInd] = fw
+		line.doc.MaxColumnWidth[fieldInd] = fw
 	}
 	if line.doc.HasHeaders && line.line == 1 {
 		line.doc.Headers = append(line.doc.Headers, val)
@@ -328,13 +348,13 @@ func (line *documentLine) AppendNull() error {
 	}
 	field.FieldIndex = fieldInd
 	line.fields = append(line.fields, field)
-	fw := calculateFieldLength(field)
-	if cw, ok := line.doc.maxColumnWidth[fieldInd]; ok {
+	fw := CalculateFieldLength(field)
+	if cw, ok := line.doc.MaxColumnWidth[fieldInd]; ok {
 		if cw < fw {
-			line.doc.maxColumnWidth[fieldInd] = fw
+			line.doc.MaxColumnWidth[fieldInd] = fw
 		}
 	} else {
-		line.doc.maxColumnWidth[fieldInd] = fw
+		line.doc.MaxColumnWidth[fieldInd] = fw
 	}
 	if line.doc.HasHeaders && line.line == 1 {
 		line.doc.Headers = append(line.doc.Headers, "-")
@@ -417,13 +437,13 @@ func (line *documentLine) UpdateField(fieldIndex int, val string) error {
 	field := line.fields[fieldIndex]
 	field.Value = val
 	line.fields[fieldIndex] = field
-	fw := calculateFieldLength(field)
-	if cw, ok := line.doc.maxColumnWidth[fieldIndex]; ok {
+	fw := CalculateFieldLength(field)
+	if cw, ok := line.doc.MaxColumnWidth[fieldIndex]; ok {
 		if cw < fw {
-			line.doc.maxColumnWidth[fieldIndex] = fw
+			line.doc.MaxColumnWidth[fieldIndex] = fw
 		}
 	} else {
-		line.doc.maxColumnWidth[fieldIndex] = fw
+		line.doc.MaxColumnWidth[fieldIndex] = fw
 	}
 	return nil
 }

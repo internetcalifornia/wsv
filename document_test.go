@@ -1,8 +1,12 @@
 package wsv_test
 
 import (
+	"fmt"
 	"io"
+	"os"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/internetcalifornia/wsv"
 )
@@ -123,9 +127,9 @@ func TestCreateTabularDocument(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	exp1 := "\"Formal Name\" Age \"Favorite Color\" \"Preferred \"\"Nickname\"\" Name\"\n"
+	exp1 := "\"Formal Name\"  Age  \"Favorite Color\"  \"Preferred \"\"Nickname\"\" Name\"\n"
 	if string(o) != exp1 {
-		t.Error("expected output to be", []byte(exp1), "but got", o, "instead")
+		t.Errorf("expected output to be \n%s\nbut got \n%s\ninstead", exp1, string(o))
 		return
 	}
 	o, err = doc.Write()
@@ -142,12 +146,12 @@ func TestCreateTabularDocument(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	exp3 := "Scott         33  \"\"               \"\"                           #cool person\n"
+	exp3 := "Scott          33   \"\"                \"\"  #cool person\n"
 	if string(o) != exp3 {
 		t.Errorf("expected output to be \n%s\nbut got \n%s\ninstead", exp3, string(o))
 		return
 	}
-	exp4 := `John          -   "Blue"/"Gray"    "Johnny"/"Boy"` + string('\n')
+	exp4 := `John           -    "Blue"/"Gray"     "Johnny"/"Boy"` + string('\n')
 	o, err = doc.Write()
 	if err != nil {
 		t.Error(err)
@@ -171,5 +175,101 @@ func TestCreateTabularDocument(t *testing.T) {
 	exp5 := exp1 + exp2 + exp3 + exp4
 	if string(o) != exp5 {
 		t.Error("expected output to be", []byte(exp5), "but got", o, "instead")
+	}
+}
+
+func TestRuneCounting(t *testing.T) {
+	str := `"Japan is a volcanic archipelago with over 100 active volcanoes."/"The currency is the yen and the symbol is ¥."`
+	c := 0
+
+	for i, r := range str {
+		if i != c {
+			t.Error("Out of sync", i, c, r, string(r), utf8.RuneCountInString(str))
+		}
+		c++
+	}
+}
+
+func TestSerializeText(t *testing.T) {
+	rec1 := wsv.RecordField{
+		Value: "Japan is a volcanic archipelago with over 100 active volcanoes.\nThe currency is the yen and the symbol is ¥.",
+	}
+	exp1 := `"Japan is a volcanic archipelago with over 100 active volcanoes."/"The currency is the yen and the symbol is ¥."`
+	out1 := rec1.SerializeText()
+	if out1 != exp1 {
+		t.Errorf("expect\n%s\nbut got\n%s\ninstead", exp1, out1)
+	}
+	cal1 := wsv.CalculateFieldLength(rec1)
+	if cal1 != 112 {
+		t.Error(cal1)
+	}
+
+	rec2 := wsv.RecordField{Value: "Would you've guessed that vodka or gin tops the list? For years, Jinro Soju has been the world's best-selling alcohol! It might not be surprising, given that with 11.2 shots on average, Koreans are also the world's biggest consumer of hard liquor. Haven't been able to try it yet? Time to visit Korea!"}
+	exp2 := `"Would you've guessed that vodka or gin tops the list? For years, Jinro Soju has been the world's best-selling alcohol! It might not be surprising, given that with 11.2 shots on average, Koreans are also the world's biggest consumer of hard liquor. Haven't been able to try it yet? Time to visit Korea!"`
+	out2 := rec2.SerializeText()
+	if out2 != exp2 {
+		t.Errorf("expect\n%s\nbut got\n%s\ninstead", exp2, out2)
+	}
+
+}
+
+func TestWriteComplexLine(t *testing.T) {
+	strs := []string{}
+	strs = append(strs, `Country						Capital    	        "Emoji of Flag" "Interesting Facts" 																								#facts generated from Google's Gemini 2024-04-24`)
+	strs = append(strs, `Japan						Tokyo				🇯🇵🇯🇵			"Japan is a volcanic archipelago with over 100 active volcanoes."/"The currency is the yen and the symbol is ¥."   #has half-width characters`)
+
+	r := wsv.NewReader(strings.NewReader(strings.Join(strs, "\n")))
+
+	lines, err := r.ReadAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(lines) != 2 {
+		t.Error("expected 2 lines but got", len(lines))
+		return
+	}
+	doc := wsv.NewDocument()
+	doc.Tabular = true
+	doc.SetPadding([]rune{' ', ' '})
+	for n, line := range lines {
+
+		ln, err := doc.AddLine()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		for fi, field := range line.Fields {
+			if n == 1 && fi == 3 && field.SerializeText() != `"Japan is a volcanic archipelago with over 100 active volcanoes."/"The currency is the yen and the symbol is ¥."` {
+				t.Error(field.SerializeText())
+				return
+			}
+			err := ln.Append(field.Value)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+		}
+		if line.Comment != "" {
+			ln.Comment = line.Comment
+		}
+	}
+	if doc.LineCount() != 2 {
+		t.Error("expected doc to have 2 lines but got", doc.LineCount())
+	}
+
+	data, err := doc.WriteAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	file, err := os.Create(fmt.Sprintf("%s/example-output/simple-output.wsv", basepath))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = file.Write(data)
+	if err != nil {
+		t.Error(err)
 	}
 }

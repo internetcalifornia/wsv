@@ -2512,10 +2512,19 @@ func TestReaderToDocument(t *testing.T) {
 	}
 	line.Comment = "added via document writer"
 
-	_, err = doc.WriteAll()
+	data, err := doc.WriteAll()
 	if err != nil {
 		t.Error(err)
 		return
+	}
+	file, err = os.Create(fmt.Sprintf("%s/example-output/complex-output.wsv", basepath))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = file.Write(data)
+	if err != nil {
+		t.Error(err)
 	}
 
 }
