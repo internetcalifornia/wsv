@@ -245,6 +245,24 @@ func (f *RecordField) serializeText() string {
 	return v
 }
 
+func (doc *document) calculateMaxFieldLengths() {
+	for _, line := range doc.lines {
+		if line == nil {
+			continue
+		}
+		for fieldInd, field := range line.fields {
+			fw := calculateFieldLength(field)
+			if cw, ok := line.doc.maxColumnWidth[fieldInd]; ok {
+				if cw < fw {
+					line.doc.maxColumnWidth[fieldInd] = fw
+				}
+			} else {
+				line.doc.maxColumnWidth[fieldInd] = fw
+			}
+		}
+	}
+}
+
 // determine if tabular document line is valid based on the number of lines of the first row/header, returns true, nil if has the correct number of data fields
 // returns false, and an error documenting the difference
 func (line *documentLine) Validate() (bool, error) {

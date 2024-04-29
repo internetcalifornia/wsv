@@ -547,7 +547,6 @@ func (r *Reader) ToDocument() (*document, error) {
 	doc := NewDocument()
 	var err error
 	var rl readerLine
-
 	for {
 		rl, err = r.Read()
 		if err != nil {
@@ -557,6 +556,8 @@ func (r *Reader) ToDocument() (*document, error) {
 		doc.lines = append(doc.lines, &line)
 	}
 	doc.Headers = r.headers
+	// need to check field sizes since we manually pushed in the slices
+	doc.calculateMaxFieldLengths()
 	if err == io.EOF || err == nil {
 		return doc, nil
 	}
