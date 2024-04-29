@@ -341,7 +341,6 @@ func checkFieldIndex(line *documentLine, fieldInd int) error {
 	if fc <= 0 {
 		return &WriteError{err: ErrFieldCount, line: line.line, fieldIndex: fieldInd}
 	}
-	fmt.Printf("has %d fields left\n", fc)
 	return nil
 }
 

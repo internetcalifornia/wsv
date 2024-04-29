@@ -2454,3 +2454,68 @@ func TestParseLineWithEmojisAndEscapedDoubleQuotesSurroundedByWhitespace(t *test
 		t.Error("field 4 to have value [The United States of America is a federal republic with \"50\" states.] but got", fields[3].Value, "instead")
 	}
 }
+
+func TestReaderToDocument(t *testing.T) {
+	file, err := os.Open(fmt.Sprintf("%s/examples/complex-values.wsv", basepath))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	r := wsv.NewReader(file)
+	doc, err := r.ToDocument()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if doc.LineCount() != 30 {
+		t.Error("Line count is", doc.LineCount())
+		return
+	}
+	line, err := doc.Line(29)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	v, err := line.NextField()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if v.Value != "Russia" {
+		t.Error("expected the value to be Russia but got", v.Value, "instead")
+	}
+	line, err = doc.AddLine()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.Append("South Korea")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.Append("Seoul")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = line.AppendNull()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.Append("Would you've guessed that vodka or gin tops the list? For years, Jinro Soju has been the world's best-selling alcohol! It might not be surprising, given that with 11.2 shots on average, Koreans are also the world's biggest consumer of hard liquor. Haven't been able to try it yet? Time to visit Korea!")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	line.Comment = "added via document writer"
+
+	_, err = doc.WriteAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+}

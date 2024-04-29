@@ -542,3 +542,23 @@ func (r *Reader) readLine() ([]byte, error) {
 	line = bytes.TrimSuffix(line, []byte("\n"))
 	return line, err
 }
+
+func (r *Reader) ToDocument() (*document, error) {
+	doc := NewDocument()
+	var err error
+	var rl readerLine
+
+	for {
+		rl, err = r.Read()
+		if err != nil {
+			break
+		}
+		line := documentLine{doc: doc, fields: rl.Fields, line: rl.line, fieldCount: rl.fieldCount, Comment: rl.Comment}
+		doc.lines = append(doc.lines, &line)
+	}
+	doc.Headers = r.headers
+	if err == io.EOF || err == nil {
+		return doc, nil
+	}
+	return nil, err
+}
