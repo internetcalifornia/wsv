@@ -335,7 +335,7 @@ func TestReadColumnAndDataWithComments(t *testing.T) {
 		return
 	}
 
-	if len(line.Comment) < 0 {
+	if len(line.Comment) == 0 {
 		t.Error("expected this line to contain a comment but got", line.Comment, "instead")
 	}
 }
@@ -392,7 +392,7 @@ func TestParseWithEmptyLinesAndComments(t *testing.T) {
 		t.Error("expected row 4 to have 0 data field and 1 comment but got", len(line.Fields), "instead")
 		return
 	}
-	if len(line.Comment) < 0 {
+	if len(line.Comment) == 0 {
 		t.Error("expected a comment but got", line.Comment, "instead")
 		return
 	}
@@ -442,7 +442,7 @@ func TestParseWithEmptyLinesAndComments(t *testing.T) {
 		return
 	}
 
-	if len(line.Comment) < 0 {
+	if len(line.Comment) == 0 {
 		t.Error("expected row 7 to contain a comment but got", line.Comment, "instead")
 	}
 	if r.CurrentRow() != 7 {
