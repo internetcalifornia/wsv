@@ -227,7 +227,7 @@ func ParseLine(n int, line []byte) ([]LineField, error) {
 	data := []byte{}
 	str := make([]LineField, 0)
 	// trim the trailing white space from the line
-	line = bytes.TrimRightFunc(line, isFieldDelimiter)
+	// line = bytes.TrimRightFunc(line, isFieldDelimiter)
 lineLoop:
 	for i, b0 := range line {
 		if b4 != nil {
@@ -265,7 +265,12 @@ lineLoop:
 			break lineLoop
 		case '#':
 			if !doubleQuoted {
-				data = append(data, line[i:]...)
+
+				if len(line[i:]) < 2 {
+					break lineLoop
+				}
+				data = append(data, line[i+1:]...)
+
 				// since we are copying to the end of line we should remove the suffix of the line feed
 				data = bytes.TrimSuffix(data, []byte{'\n'})
 				str = append(str, LineField{IsComment: true, Value: string(data), IsNull: isNull})
@@ -307,7 +312,6 @@ lineLoop:
 
 		case '-':
 			if r == '-' && (b2 == nil || isFieldDelimiter(rune(*b2))) && !doubleQuoted {
-				// fmt.Println("setting row", n, "null flag from column", i)
 				isNull = true
 			}
 			fallthrough
@@ -332,15 +336,6 @@ lineLoop:
 
 			}
 
-			// if (b3 == nil || rune(*b3) != '"') && (b2 != nil && rune(*b2) == '"') && startDoubleQuote <= i {
-			// 	if strings.HasSuffix(bytesToString(b4, b3, b2, b1), `"/`) ||
-			// 		strings.HasPrefix(bytesToString(b4, b3, b2, b1), `"/"`) {
-			// 	} else {
-			// 		startDoubleQuote = i - 1
-			// 		doubleQuoted = true
-			// 	}
-			// }
-
 			isDelim := isFieldDelimiter(r)
 			if isDelim && (!doubleQuoted) {
 				if len(data) == 0 && !isNull {
@@ -350,10 +345,13 @@ lineLoop:
 					nb := neighborBytes(i, line)
 					return str, &ParseError{Line: n, Err: ErrBareQuote, Column: i, NeighborBytes: nb}
 				}
-
 				str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 				isNull = false
 				data = []byte{}
+				continue
+			}
+			if isNull && r == '-' {
+				// since we identified the field as null and
 				continue
 			}
 			data = append(data, byte(r))
@@ -372,6 +370,7 @@ lineLoop:
 			return str, &ParseError{Line: n, Err: ErrBareQuote, Column: startDoubleQuote, NeighborBytes: nb}
 		}
 		str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
+
 	}
 	return str, nil
 }

@@ -296,8 +296,8 @@ func TestReadColumnAndDataWithComments(t *testing.T) {
 	if len(r.Comments) != 2 {
 		t.Errorf("Expected to have three comments but got %d %+v", len(r.Comments), r.Comments)
 	}
-	if c, err := r.CommentFor(2); err != nil || c != "#this data is probably not accurate" {
-		t.Errorf("Expected row to have a comment but got %d %+v", len(r.Comments), err)
+	if c, err := r.CommentFor(2); err != nil || c != "this data is probably not accurate" {
+		t.Errorf("Expected row to have a comment but got %d %+v", len(r.Comments), c)
 	}
 	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "john" {
 		t.Errorf("Row 1 Column 1 does not match %+v", line[0])
@@ -405,7 +405,7 @@ func TestParseWithEmptyLinesAndComments(t *testing.T) {
 	if len(r.Comments) != 3 {
 		t.Errorf("Expected parse until row 5 to have three comments but got %d %+v", len(r.Comments), r.Comments)
 	}
-	if c, err := r.CommentFor(5); err != nil || c != "#this data is probably not accurate" {
+	if c, err := r.CommentFor(5); err != nil || c != "this data is probably not accurate" {
 		t.Errorf("Expected row to have a comment but got %d %+v", len(r.Comments), err)
 	}
 	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "john" {
@@ -595,6 +595,14 @@ func TestParseInvalidDashValue(t *testing.T) {
 	}
 }
 
+func TestParseInvalidDashInLastField(t *testing.T) {
+	line := `john hungry -hippo`
+	_, err := wsv.ParseLine(1, []byte(line))
+	if err == nil {
+		t.Error("expected this to throw an error")
+	}
+}
+
 func TestParseBareDoubleQuote(t *testing.T) {
 	line := `India						"""					🇮🇳			  -`
 	r, err := wsv.ParseLine(1, []byte(line))
@@ -754,6 +762,29 @@ func TestParseComplexDoubleQuoteLine(t *testing.T) {
 	if len(fields) != 4 {
 		t.Errorf("Parse line expected 4 record but got %+v (%d)", fields, len(fields))
 		return
+	}
+}
+
+func TestParseEmptyComment(t *testing.T) {
+	line := `john hungry #`
+	r, err := wsv.ParseLine(1, []byte(line))
+	if err != nil {
+		t.Error(err)
+	}
+	if len(r) != 2 {
+		t.Errorf("Parse line expected 2 record but got %+v (%d)", r, len(r))
+	}
+}
+
+func TestParseCommentWithJustSpaces(t *testing.T) {
+
+	line := `john hungry #      `
+	r, err := wsv.ParseLine(1, []byte(line))
+	if err != nil {
+		t.Error(err)
+	}
+	if len(r) != 3 {
+		t.Errorf("Parse line expected 3 record but got %+v (%d)", r, len(r))
 	}
 }
 
@@ -1354,8 +1385,8 @@ func TestReadWithComments(t *testing.T) {
 	if fields[3].Value != "gender" {
 		t.Error("expect header 4 to be [gender] but got", fields[3].Value, "instead")
 	}
-	if fields[4].Value != "#these are headers" || !fields[4].IsComment {
-		t.Error("expect header 5 to be [#these are headers] but got", fields[4].Value, "instead")
+	if fields[4].Value != "these are headers" || !fields[4].IsComment {
+		t.Error("expect header 5 to be [these are headers] but got", fields[4].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -1379,8 +1410,8 @@ func TestReadWithComments(t *testing.T) {
 	if fields[3].Value != "M" {
 		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", fields[3].Value, "instead")
 	}
-	if fields[4].Value != "#this data is probably not accurate" || !fields[4].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 5 to be [#this data is probably not accurate] but got", fields[4].Value, "instead")
+	if fields[4].Value != "this data is probably not accurate" || !fields[4].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 5 to be [this data is probably not accurate] but got", fields[4].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -1414,7 +1445,7 @@ func TestReadWithComments(t *testing.T) {
 		t.Error("expected to have 1 fields but got", len(fields), "instead")
 		return
 	}
-	if fields[0].Value != "#this is a comment" || !fields[0].IsComment {
+	if fields[0].Value != "this is a comment" || !fields[0].IsComment {
 		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", fields[0].Value, "instead")
 	}
 
@@ -1450,8 +1481,8 @@ func TestReadWithCEmptyLinesAndComments(t *testing.T) {
 	if fields[3].Value != "gender" {
 		t.Error("expect header 4 to be [gender] but got", fields[3].Value, "instead")
 	}
-	if fields[4].Value != "#these are headers" || !fields[4].IsComment {
-		t.Error("expect header 5 to be [#these are headers] but got", fields[4].Value, "instead")
+	if fields[4].Value != "these are headers" || !fields[4].IsComment {
+		t.Error("expect header 5 to be [these are headers] but got", fields[4].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -1481,8 +1512,8 @@ func TestReadWithCEmptyLinesAndComments(t *testing.T) {
 		t.Error("expected line", r.CurrentRow(), "to have 1 fields but got", len(fields), "instead")
 		return
 	}
-	if fields[0].Value != "#here we go!" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field ` to be [#here we go!] but got", fields[0].Value, "instead")
+	if fields[0].Value != "here we go!" || !fields[0].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field ` to be [here we go!] but got", fields[0].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -1507,8 +1538,8 @@ func TestReadWithCEmptyLinesAndComments(t *testing.T) {
 	if fields[3].Value != "M" {
 		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", fields[3].Value, "instead")
 	}
-	if fields[4].Value != "#this data is probably not accurate" || !fields[4].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 5 to be [#this data is probably not accurate] but got", fields[4].Value, "instead")
+	if fields[4].Value != "this data is probably not accurate" || !fields[4].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 5 to be [this data is probably not accurate] but got", fields[4].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -1542,8 +1573,8 @@ func TestReadWithCEmptyLinesAndComments(t *testing.T) {
 		t.Error("expected to have 1 fields but got", len(fields), "instead")
 		return
 	}
-	if fields[0].Value != "#this is a comment" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", fields[0].Value, "instead")
+	if fields[0].Value != "this is a comment" || !fields[0].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [this is a comment] but got", fields[0].Value, "instead")
 	}
 
 }
@@ -1637,8 +1668,8 @@ func TestReadComplexValues(t *testing.T) {
 	if fields[3].Value != "Interesting Facts" {
 		t.Error("expect header 4 to be [Interesting Facts] but got", fields[3].Value, "instead")
 	}
-	if fields[4].Value != "#facts generated from Google's Gemini 2024-04-24" || !fields[4].IsComment {
-		t.Error("expected header 5 to be comment and have the value [#facts generated from Google's Gemini 2024-04-24] but got", fields[4].Value, fields[4].IsComment, "instead")
+	if fields[4].Value != "facts generated from Google's Gemini 2024-04-24" || !fields[4].IsComment {
+		t.Error("expected header 5 to be comment and have the value [facts generated from Google's Gemini 2024-04-24] but got", fields[4].Value, fields[4].IsComment, "instead")
 	}
 
 	fields, err = r.Read()
@@ -1823,7 +1854,7 @@ func TestReadComplexValues(t *testing.T) {
 		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
 	}
 
-	if fields[4].Value != "#has half-width characters" || !fields[4].IsComment {
+	if fields[4].Value != "has half-width characters" || !fields[4].IsComment {
 		t.Error("expect row", r.CurrentRow(), "field 5 to be a comment but got", fields[3].Value, "instead")
 	}
 
@@ -1933,8 +1964,8 @@ func TestReadComplexValues(t *testing.T) {
 		return
 	}
 
-	if fields[0].Value != "# emphasis on 50 with double quotes" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [# emphasis on 50 with double quotes] but got", fields[0].Value, "instead")
+	if fields[0].Value != " emphasis on 50 with double quotes" || !fields[0].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [ emphasis on 50 with double quotes] but got", fields[0].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -2005,8 +2036,8 @@ func TestReadComplexValues(t *testing.T) {
 		return
 	}
 
-	if fields[0].Value != "# update the remaining" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [# update the remaining] but got", fields[0].Value, "instead")
+	if fields[0].Value != " update the remaining" || !fields[0].IsComment {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [ update the remaining] but got", fields[0].Value, "instead")
 	}
 
 	fields, err = r.Read()
@@ -2085,8 +2116,8 @@ func TestReadComplexValues(t *testing.T) {
 		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
 	}
 
-	if fields[4].Value != "#need to add facts for the remaining" {
-		t.Error("expect row", r.CurrentRow(), "field 5 to have value [#need to add facts for the remaining] but got", fields[4].Value, "instead")
+	if fields[4].Value != "need to add facts for the remaining" {
+		t.Error("expect row", r.CurrentRow(), "field 5 to have value [need to add facts for the remaining] but got", fields[4].Value, "instead")
 	}
 
 	fields, err = r.Read()
