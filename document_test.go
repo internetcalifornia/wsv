@@ -7,7 +7,7 @@ import (
 	"github.com/internetcalifornia/wsv"
 )
 
-func TestCreateDocument(t *testing.T) {
+func TestCreateTabularDocument(t *testing.T) {
 	doc := wsv.NewDocument()
 
 	line, err := doc.AddLine()
@@ -23,6 +23,11 @@ func TestCreateDocument(t *testing.T) {
 	line.Append("Age")
 	line.Append("Favorite Color")
 	line.Append("Preferred \"Nickname\" Name")
+	_, err = line.Validate()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if line.FieldCount() != 4 {
 		t.Error("expect line", line.Line(), "to have 4 field but got", line.FieldCount(), "instead")
 	}
@@ -62,11 +67,18 @@ func TestCreateDocument(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 	err = line.Append("")
 	if err != nil {
 		t.Error(err)
 	}
+	line.Comment = "cool person"
 
+	_, err = line.Validate()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	err = line.Append("invalid")
 	if err == nil {
 		t.Error("expected an error since doc is tabular")
@@ -77,6 +89,31 @@ func TestCreateDocument(t *testing.T) {
 		return
 	}
 	err = header.UpdateField(0, "Formal Name")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	line, err = doc.AddLine()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.Append("John")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.AppendNull()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.Append("Blue\nGray")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = line.Append("Johnny\nBoy")
 	if err != nil {
 		t.Error(err)
 		return
@@ -105,12 +142,21 @@ func TestCreateDocument(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	exp3 := "Scott         33  \"\"               \"\"\n"
+	exp3 := "Scott         33  \"\"               \"\"                           #cool person\n"
 	if string(o) != exp3 {
-		t.Error("expected output to be", []byte(exp3), "but got", o, "instead")
+		t.Errorf("expected output to be \n%s\nbut got \n%s\ninstead", exp3, string(o))
 		return
 	}
-
+	exp4 := `John          -   "Blue"/"Gray"    "Johnny"/"Boy"` + string('\n')
+	o, err = doc.Write()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if string(o) != exp4 {
+		t.Errorf("expected output to be \n%s\nbut got \n%s\ninstead", exp4, string(o))
+		return
+	}
 	_, err = doc.Write()
 	if err != io.EOF || err == nil {
 		t.Error("expected EOF")
@@ -122,8 +168,8 @@ func TestCreateDocument(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	exp4 := exp1 + exp2 + exp3
-	if string(o) != exp4 {
-		t.Error("expected output to be", []byte(exp4), "but got", o, "instead")
+	exp5 := exp1 + exp2 + exp3 + exp4
+	if string(o) != exp5 {
+		t.Error("expected output to be", []byte(exp5), "but got", o, "instead")
 	}
 }

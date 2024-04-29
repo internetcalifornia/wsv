@@ -14,6 +14,8 @@ var (
 	ErrInvalidPaddingRune = errors.New("only whitespace characters can be used for padding")
 	ErrStartedToWrite     = errors.New("document started to write, need to reset document to edit")
 	ErrLineIsNotHeader    = errors.New("the line is not the first line in the document")
+	ErrNotEnoughLines     = errors.New("document does not have more than 1 line")
+	ErrLineNotEditable    = errors.New("cannot edit")
 )
 
 type WriteError struct {
@@ -34,11 +36,15 @@ func (e *WriteError) Error() string {
 		return fmt.Sprintf("the writer already started and has currently written up until line %d, reset the writer to continue editing the document.", e.line)
 	}
 
-	if e.err == ErrFieldNotFound {
-		return fmt.Sprintf("Field %d, %s for line %d", e.fieldIndex, e.err.Error(), e.line)
+	if e.err == ErrLineNotEditable {
+		return fmt.Sprintf("line %d is non-editable %s", e.line, e.err.Error())
 	}
 
-	return e.Error()
+	if e.err == ErrFieldNotFound {
+		return fmt.Sprintf("field %d, %s for line %d", e.fieldIndex, e.err.Error(), e.line)
+	}
+
+	return e.err.Error()
 }
 
 type document struct {
@@ -82,22 +88,26 @@ func (doc *document) SetPadding(rs []rune) error {
 }
 
 type documentLine struct {
-	doc    *document
-	fields []RecordField
-
+	doc     *document
+	fields  []RecordField
+	Comment string
 	// Lines are 1-indexed
 	line int
+	// count of data fields, has a getter documentLine.FieldCount()
+	fieldCount int
 }
 
 func (doc *document) AddLine() (*documentLine, error) {
 	if doc.startedWriting {
 		return nil, &WriteError{err: ErrStartedToWrite, line: doc.currentWriteLine}
 	}
+	pln := len(doc.lines)
 	line := documentLine{
 		doc:    doc,
 		fields: make([]RecordField, 0),
-		line:   len(doc.lines) + 1,
+		line:   pln + 1,
 	}
+
 	doc.lines = append(doc.lines, &line)
 	doc.currentField = 0
 	return &line, nil
@@ -138,20 +148,17 @@ func (doc *document) Write() ([]byte, error) {
 		return buf, ErrOmitHeaders
 	}
 	// if configured to be tabular, not an empty line, and has too little/many fields compared to headers return an error
-	if doc.Tabular && doc.currentWriteLine != 0 && line.FieldCount() != 0 && line.FieldCount() != len(doc.Headers) {
-		return buf, &WriteError{line: line.line, headerCount: len(doc.Headers), fieldIndex: line.FieldCount(), err: ErrFieldCount}
+	if doc.Tabular && doc.currentWriteLine != 0 && line.fieldCount != 0 && line.fieldCount != len(doc.Headers) {
+		return buf, &WriteError{line: line.line, headerCount: len(doc.Headers), fieldIndex: line.fieldCount, err: ErrFieldCount}
 	}
 
 	for i, field := range line.fields {
-		fmt.Printf("Field (%d) value [%s]\n", i, field.Value)
 		mw := doc.maxColumnWidth[i]
-		fmt.Printf("Column %d max width is %d\n", i, mw)
 		v := field.serializeText()
 		p := len(v)
-		fmt.Printf("Will serialize as [%s](%d)\n", v, p)
-		if doc.Tabular && len(line.fields)-1 != i {
+		if doc.Tabular && (len(line.fields)-1 != i || (len(line.fields)-1 == i && len(line.Comment) > 0)) {
 			for {
-				// pad value with single spaces unless it's the last column
+				// pad value with single spaces unless it's the last column or line has a comment
 				if p < mw {
 					v = fmt.Sprintf("%s%s", v, " ")
 					p = len(v)
@@ -159,14 +166,17 @@ func (doc *document) Write() ([]byte, error) {
 				}
 				break
 			}
-			fmt.Printf("Padded now field is [%s]\n", v)
 		}
+
 		if i == 0 {
 			buf = append(buf, []byte(v)...)
 		} else {
 			buf = append(buf, runeToBytes(doc.padding)...)
 			buf = append(buf, []byte(v)...)
 		}
+	}
+	if len(line.Comment) > 0 {
+		buf = append(buf, []byte(fmt.Sprintf("#%s", line.Comment))...)
 	}
 	buf = append(buf, byte('\n'))
 	doc.currentWriteLine += 1
@@ -222,9 +232,6 @@ func (f *RecordField) serializeText() string {
 	if f.IsNull {
 		return "-"
 	}
-	if f.IsComment {
-		return f.Value
-	}
 	v := f.Value
 	v = strings.ReplaceAll(v, `"`, `""`)
 	if strings.Contains(v, "\n") {
@@ -240,37 +247,103 @@ func (f *RecordField) serializeText() string {
 	return v
 }
 
-func (line *documentLine) Append(val string) error {
+// determine if tabular document line is valid based on the number of lines of the first row/header, returns true, nil if has the correct number of data fields
+// returns false, and an error documenting the difference
+func (line *documentLine) Validate() (bool, error) {
+	if !line.doc.Tabular {
+		return true, nil
+	}
+	if line.doc.HasHeaders && len(line.doc.Headers) != line.fieldCount {
+		return false, fmt.Errorf("line %d does not have the correct number of fields %d/%d (current/expected)", line.line, line.fieldCount, len(line.doc.Headers))
+	}
+	if !line.doc.HasHeaders && line.line > 1 && len(line.doc.lines) >= 1 && len(line.doc.lines[0].fields) != line.fieldCount {
+		return false, fmt.Errorf("line %d does not have the correct number of fields %d/%d (current/expected)", line.line, line.fieldCount, len(line.doc.lines[0].fields))
+	}
+	return true, nil
+}
 
+func (line *documentLine) Append(val string) error {
 	field := RecordField{Value: val}
 	if line.doc.HasHeaders && line.line == 1 {
 		field.IsHeader = true
 		field.FieldName = val
 	}
 	fieldInd := len(line.fields)
-	if line.line > 1 && line.doc.Tabular && fieldInd > len(line.doc.Headers)-1 {
+	err := checkFieldIndex(line, fieldInd)
+	if err != nil {
 		return ErrFieldCount
 	}
+
 	if line.line > 1 && len(line.doc.Headers)-1 > fieldInd {
 		field.FieldName = line.doc.Headers[fieldInd]
 	}
-
 	field.FieldIndex = fieldInd
 	line.fields = append(line.fields, field)
 	fw := calculateFieldLength(field)
-	fmt.Printf("Line: %d Column: %d Value: [%s] will serialize with a width of %d\n", line.line, fieldInd, val, fw)
 	if cw, ok := line.doc.maxColumnWidth[fieldInd]; ok {
 		if cw < fw {
-			fmt.Printf("updating max width of column %d to %d\n", fieldInd, fw)
 			line.doc.maxColumnWidth[fieldInd] = fw
 		}
 	} else {
-		fmt.Printf("initializing max width of column %d to %d\n", fieldInd, fw)
 		line.doc.maxColumnWidth[fieldInd] = fw
 	}
 	if line.doc.HasHeaders && line.line == 1 {
 		line.doc.Headers = append(line.doc.Headers, val)
 	}
+	// increment the field count for the line
+	line.fieldCount++
+	return nil
+}
+
+func (line *documentLine) AppendNull() error {
+	field := RecordField{IsNull: true}
+	if line.doc.HasHeaders && line.line == 1 {
+		field.IsHeader = true
+		field.FieldName = "-"
+	}
+	fieldInd := len(line.fields)
+	err := checkFieldIndex(line, fieldInd)
+	if err != nil {
+		return ErrFieldCount
+	}
+
+	if line.line > 1 && len(line.doc.Headers)-1 > fieldInd {
+		field.FieldName = line.doc.Headers[fieldInd]
+	}
+	field.FieldIndex = fieldInd
+	line.fields = append(line.fields, field)
+	fw := calculateFieldLength(field)
+	if cw, ok := line.doc.maxColumnWidth[fieldInd]; ok {
+		if cw < fw {
+			line.doc.maxColumnWidth[fieldInd] = fw
+		}
+	} else {
+		line.doc.maxColumnWidth[fieldInd] = fw
+	}
+	if line.doc.HasHeaders && line.line == 1 {
+		line.doc.Headers = append(line.doc.Headers, "-")
+	}
+	// increment the field count for the line
+	line.fieldCount++
+	return nil
+}
+
+// check field index is valid, returns the number of fields left, -1 is returned when document is not tabular or is the first line
+func checkFieldIndex(line *documentLine, fieldInd int) error {
+	if !line.doc.Tabular || line.line <= 1 {
+		// if the document is not tabular or this is the first line this check won't be in effect
+		return nil
+	}
+	if len(line.doc.lines) <= 1 {
+		// unexpected
+		return ErrNotEnoughLines
+	}
+	fc := line.doc.lines[0].fieldCount - fieldInd
+
+	if fc <= 0 {
+		return &WriteError{err: ErrFieldCount, line: line.line, fieldIndex: fieldInd}
+	}
+	fmt.Printf("has %d fields left\n", fc)
 	return nil
 }
 
@@ -283,8 +356,9 @@ func (line *documentLine) NextField() (*RecordField, error) {
 	return &line.fields[fieldInd], nil
 }
 
+// Returns the number of data fields, non-comment fields
 func (line *documentLine) FieldCount() int {
-	return len(line.fields)
+	return line.fieldCount
 }
 
 func (line *documentLine) Line() int {
