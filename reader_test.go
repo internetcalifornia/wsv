@@ -122,57 +122,57 @@ func TestReadColumnAndDataWithSpaces(t *testing.T) {
 	file := strings.Join(lines, string('\n'))
 	str := strings.NewReader(file)
 	r := wsv.NewReader(str)
-	fields, err := r.Read()
+	line, err := r.Read()
 
 	if err != nil {
 		t.Error(err)
 	}
-	if len(fields) < 4 {
-		t.Errorf("expected 4 fields but only got %d instead", len(fields))
+	if len(line.Fields) < 4 {
+		t.Errorf("expected 4 fields but only got %d instead", len(line.Fields))
 	}
-	if !fields[0].IsHeader || fields[0].Value != "Given Name" {
-		t.Errorf("Header 1 does not match %+v", fields[0])
+	if !line.Fields[0].IsHeader || line.Fields[0].Value != "Given Name" {
+		t.Errorf("Header 1 does not match %+v", line.Fields[0])
 	}
-	if !fields[1].IsHeader || fields[1].Value != "Family Name" {
-		t.Errorf("Header 2 does not match %+v", fields[1])
+	if !line.Fields[1].IsHeader || line.Fields[1].Value != "Family Name" {
+		t.Errorf("Header 2 does not match %+v", line.Fields[1])
 	}
-	if !fields[2].IsHeader || fields[2].Value != "Date of Birth" {
-		t.Errorf("Header 3 does not match %+v", fields[2])
+	if !line.Fields[2].IsHeader || line.Fields[2].Value != "Date of Birth" {
+		t.Errorf("Header 3 does not match %+v", line.Fields[2])
 	}
-	if !fields[3].IsHeader || fields[3].Value != "Favorite Color" {
-		t.Errorf("Header 4 does not match %+v", fields[3])
+	if !line.Fields[3].IsHeader || line.Fields[3].Value != "Favorite Color" {
+		t.Errorf("Header 4 does not match %+v", line.Fields[3])
 	}
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if fields[0].IsHeader || fields[0].FieldName != "Given Name" || fields[0].Value != "Jean Smith" {
-		t.Errorf("Row 1 Column 1 does not match %+v", fields[0])
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "Given Name" || line.Fields[0].Value != "Jean Smith" {
+		t.Errorf("Row 1 Column 1 does not match %+v", line.Fields[0])
 	}
-	if fields[1].IsHeader || fields[1].FieldName != "Family Name" || fields[1].Value != "Le Croix" {
-		t.Errorf("Row 1 Column 2 does not match %+v", fields[1])
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "Family Name" || line.Fields[1].Value != "Le Croix" {
+		t.Errorf("Row 1 Column 2 does not match %+v", line.Fields[1])
 	}
-	if fields[2].IsHeader || fields[2].FieldName != "Date of Birth" || fields[2].Value != "Jan 01 2023" {
-		t.Errorf("Row 1 Column 3 does not match %+v", fields[2])
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "Date of Birth" || line.Fields[2].Value != "Jan 01 2023" {
+		t.Errorf("Row 1 Column 3 does not match %+v", line.Fields[2])
 	}
-	if fields[3].IsHeader || fields[3].FieldName != "Favorite Color" || fields[3].Value != "Space Purple" {
-		t.Errorf("Row 1 Column 4 does not match %+v", fields[3])
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "Favorite Color" || line.Fields[3].Value != "Space Purple" {
+		t.Errorf("Row 1 Column 4 does not match %+v", line.Fields[3])
 	}
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if fields[0].IsHeader || fields[0].FieldName != "Given Name" || fields[0].Value != "Mary Jane" {
-		t.Errorf("Row 2 Column 1 does not match %+v", fields[0])
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "Given Name" || line.Fields[0].Value != "Mary Jane" {
+		t.Errorf("Row 2 Column 1 does not match %+v", line.Fields[0])
 	}
-	if fields[1].IsHeader || fields[1].FieldName != "Family Name" || fields[1].Value != "Vasquez Rojas" {
-		t.Errorf("Row 2 Column 2 does not match %+v", fields[1])
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "Family Name" || line.Fields[1].Value != "Vasquez Rojas" {
+		t.Errorf("Row 2 Column 2 does not match %+v", line.Fields[1])
 	}
-	if fields[2].IsHeader || fields[2].FieldName != "Date of Birth" || fields[2].Value != "Feb 02 2021" {
-		t.Errorf("Row 2 Column 3 does not match %+v", fields[2])
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "Date of Birth" || line.Fields[2].Value != "Feb 02 2021" {
+		t.Errorf("Row 2 Column 3 does not match %+v", line.Fields[2])
 	}
-	if fields[3].IsHeader || fields[3].FieldName != "Favorite Color" || fields[3].Value != "Midnight Grey" {
-		t.Errorf("Row 2 Column 4 does not match %+v", fields[3])
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "Favorite Color" || line.Fields[3].Value != "Midnight Grey" {
+		t.Errorf("Row 2 Column 4 does not match %+v", line.Fields[3])
 	}
 }
 
@@ -218,49 +218,49 @@ func TestReadColumnAndDataWithoutSpaces(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !line[0].IsHeader || line[0].Value != "fName" {
-		t.Errorf("Header 1 does not match %+v", line[0])
+	if !line.Fields[0].IsHeader || line.Fields[0].Value != "fName" {
+		t.Errorf("Header 1 does not match %+v", line.Fields[0])
 	}
-	if !line[1].IsHeader || line[1].Value != "lName" {
-		t.Errorf("Header 2 does not match %+v", line[1])
+	if !line.Fields[1].IsHeader || line.Fields[1].Value != "lName" {
+		t.Errorf("Header 2 does not match %+v", line.Fields[1])
 	}
-	if !line[2].IsHeader || line[2].Value != "dob" {
-		t.Errorf("Header 3 does not match %+v", line[2])
+	if !line.Fields[2].IsHeader || line.Fields[2].Value != "dob" {
+		t.Errorf("Header 3 does not match %+v", line.Fields[2])
 	}
-	if !line[3].IsHeader || line[3].Value != "gender" {
-		t.Errorf("Header 4 does not match %+v", line[3])
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "john" {
-		t.Errorf("Row 1 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != "lName" || line[1].Value != "doe" {
-		t.Errorf("Row 1 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != "dob" || line[2].Value != "2023-01-01" {
-		t.Errorf("Row 1 Column 3 does not match %+v", line[2])
-	}
-	if line[3].IsHeader || line[3].FieldName != "gender" || line[3].Value != "M" {
-		t.Errorf("Row 1 Column 4 does not match %+v", line[3])
+	if !line.Fields[3].IsHeader || line.Fields[3].Value != "gender" {
+		t.Errorf("Header 4 does not match %+v", line.Fields[3])
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "jane" {
-		t.Errorf("Row 2 Column 1 does not match %+v", line[0])
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "fName" || line.Fields[0].Value != "john" {
+		t.Errorf("Row 1 Column 1 does not match %+v", line.Fields[0])
 	}
-	if line[1].IsHeader || line[1].FieldName != "lName" || line[1].Value != "smith" {
-		t.Errorf("Row 2 Column 2 does not match %+v", line[1])
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "lName" || line.Fields[1].Value != "doe" {
+		t.Errorf("Row 1 Column 2 does not match %+v", line.Fields[1])
 	}
-	if line[2].IsHeader || line[2].FieldName != "dob" || line[2].Value != "2024-01-01" {
-		t.Errorf("Row 2 Column 3 does not match %+v", line[2])
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "dob" || line.Fields[2].Value != "2023-01-01" {
+		t.Errorf("Row 1 Column 3 does not match %+v", line.Fields[2])
 	}
-	if line[3].IsHeader || line[3].FieldName != "gender" || line[3].Value != "F" {
-		t.Errorf("Row 2 Column 4 does not match %+v", line[3])
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "gender" || line.Fields[3].Value != "M" {
+		t.Errorf("Row 1 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "fName" || line.Fields[0].Value != "jane" {
+		t.Errorf("Row 2 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "lName" || line.Fields[1].Value != "smith" {
+		t.Errorf("Row 2 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "dob" || line.Fields[2].Value != "2024-01-01" {
+		t.Errorf("Row 2 Column 3 does not match %+v", line.Fields[2])
+	}
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "gender" || line.Fields[3].Value != "F" {
+		t.Errorf("Row 2 Column 4 does not match %+v", line.Fields[3])
 	}
 }
 
@@ -277,68 +277,66 @@ func TestReadColumnAndDataWithComments(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !line[0].IsHeader || line[0].Value != "fName" {
-		t.Errorf("Header 1 does not match %+v", line[0])
+	if !line.Fields[0].IsHeader || line.Fields[0].Value != "fName" {
+		t.Errorf("Header 1 does not match %+v", line.Fields[0])
 	}
-	if !line[1].IsHeader || line[1].Value != "lName" {
-		t.Errorf("Header 2 does not match %+v", line[1])
+	if !line.Fields[1].IsHeader || line.Fields[1].Value != "lName" {
+		t.Errorf("Header 2 does not match %+v", line.Fields[1])
 	}
-	if !line[2].IsHeader || line[2].Value != "dob" {
-		t.Errorf("Header 3 does not match %+v", line[2])
+	if !line.Fields[2].IsHeader || line.Fields[2].Value != "dob" {
+		t.Errorf("Header 3 does not match %+v", line.Fields[2])
 	}
-	if !line[3].IsHeader || line[3].Value != "gender" {
-		t.Errorf("Header 4 does not match %+v", line[3])
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if len(r.Comments) != 2 {
-		t.Errorf("Expected to have three comments but got %d %+v", len(r.Comments), r.Comments)
-	}
-	if c, err := r.CommentFor(2); err != nil || c != "this data is probably not accurate" {
-		t.Errorf("Expected row to have a comment but got %d %+v", len(r.Comments), c)
-	}
-	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "john" {
-		t.Errorf("Row 1 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != "lName" || line[1].Value != "doe" {
-		t.Errorf("Row 1 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != "dob" || line[2].Value != "2023-01-01" {
-		t.Errorf("Row 1 Column 3 does not match %+v", line[2])
-	}
-	if line[3].IsHeader || line[3].FieldName != "gender" || line[3].Value != "M" {
-		t.Errorf("Row 1 Column 4 does not match %+v", line[3])
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "jane" {
-		t.Errorf("Row 2 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != "lName" || line[1].Value != "smith" {
-		t.Errorf("Row 2 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != "dob" || line[2].Value != "2024-01-01" {
-		t.Errorf("Row 2 Column 3 does not match %+v", line[2])
-	}
-	if line[3].IsHeader || line[3].FieldName != "gender" || line[3].Value != "F" {
-		t.Errorf("Row 2 Column 4 does not match %+v", line[3])
+	if !line.Fields[3].IsHeader || line.Fields[3].Value != "gender" {
+		t.Errorf("Header 4 does not match %+v", line.Fields[3])
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(line) != 1 {
-		t.Error("expected the line to have a length of 1 but got", len(line), "instead")
+	if line.Comment != "this data is probably not accurate" {
+		t.Errorf("Expected row to have a comment but got %s", err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "fName" || line.Fields[0].Value != "john" {
+		t.Errorf("Row 1 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "lName" || line.Fields[1].Value != "doe" {
+		t.Errorf("Row 1 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "dob" || line.Fields[2].Value != "2023-01-01" {
+		t.Errorf("Row 1 Column 3 does not match %+v", line.Fields[2])
+	}
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "gender" || line.Fields[3].Value != "M" {
+		t.Errorf("Row 1 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "fName" || line.Fields[0].Value != "jane" {
+		t.Errorf("Row 2 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "lName" || line.Fields[1].Value != "smith" {
+		t.Errorf("Row 2 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "dob" || line.Fields[2].Value != "2024-01-01" {
+		t.Errorf("Row 2 Column 3 does not match %+v", line.Fields[2])
+	}
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "gender" || line.Fields[3].Value != "F" {
+		t.Errorf("Row 2 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(line.Fields) != 0 && line.Comment == "this is a comment" {
+		t.Error("expected the line to have a length of 0 but got", len(line.Fields), "instead")
 		return
 	}
 
-	if !line[0].IsComment {
-		t.Error("expected this line to contain a comment but got", line[0], "instead")
+	if len(line.Comment) < 0 {
+		t.Error("expected this line to contain a comment but got", line.Comment, "instead")
 	}
 }
 
@@ -358,96 +356,94 @@ func TestParseWithEmptyLinesAndComments(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !line[0].IsHeader || line[0].Value != "fName" {
-		t.Errorf("Header 1 does not match %+v", line[0])
+	if !line.Fields[0].IsHeader || line.Fields[0].Value != "fName" {
+		t.Errorf("Header 1 does not match %+v", line.Fields[0])
 	}
-	if !line[1].IsHeader || line[1].Value != "lName" {
-		t.Errorf("Header 2 does not match %+v", line[1])
+	if !line.Fields[1].IsHeader || line.Fields[1].Value != "lName" {
+		t.Errorf("Header 2 does not match %+v", line.Fields[1])
 	}
-	if !line[2].IsHeader || line[2].Value != "dob" {
-		t.Errorf("Header 3 does not match %+v", line[2])
+	if !line.Fields[2].IsHeader || line.Fields[2].Value != "dob" {
+		t.Errorf("Header 3 does not match %+v", line.Fields[2])
 	}
-	if !line[3].IsHeader || line[3].Value != "gender" {
-		t.Errorf("Header 4 does not match %+v", line[3])
+	if !line.Fields[3].IsHeader || line.Fields[3].Value != "gender" {
+		t.Errorf("Header 4 does not match %+v", line.Fields[3])
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if len(line) != 0 {
-		t.Error("expected row 2 to have zero fields but got", len(line), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected row 2 to have zero fields but got", len(line.Fields), "instead")
 		return
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if len(line) != 0 {
-		t.Error("expected row 3 to have zero fields but got", len(line), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected row 3 to have zero fields but got", len(line.Fields), "instead")
 		return
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if len(line) != 1 {
-		t.Error("expected row 4 to have 1 comment but got", len(line), "instead")
+	if len(line.Fields) > 0 {
+		t.Error("expected row 4 to have 0 data field and 1 comment but got", len(line.Fields), "instead")
 		return
 	}
-	if !line[0].IsComment {
-		t.Error("expected a comment but got", line[0], "instead")
+	if len(line.Comment) < 0 {
+		t.Error("expected a comment but got", line.Comment, "instead")
 		return
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if len(r.Comments) != 3 {
-		t.Errorf("Expected parse until row 5 to have three comments but got %d %+v", len(r.Comments), r.Comments)
-	}
-	if c, err := r.CommentFor(5); err != nil || c != "this data is probably not accurate" {
-		t.Errorf("Expected row to have a comment but got %d %+v", len(r.Comments), err)
-	}
-	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "john" {
-		t.Errorf("Row 5 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != "lName" || line[1].Value != "doe" {
-		t.Errorf("Row 5 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != "dob" || line[2].Value != "2023-01-01" {
-		t.Errorf("Row 5 Column 3 does not match %+v", line[2])
-	}
-	if line[3].IsHeader || line[3].FieldName != "gender" || line[3].Value != "M" {
-		t.Errorf("Row 5 Column 4 does not match %+v", line[3])
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if line[0].IsHeader || line[0].FieldName != "fName" || line[0].Value != "jane" {
-		t.Errorf("Row 6 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != "lName" || line[1].Value != "smith" {
-		t.Errorf("Row 6 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != "dob" || line[2].Value != "2024-01-01" {
-		t.Errorf("Row 6 Column 3 does not match %+v", line[2])
-	}
-	if line[3].IsHeader || line[3].FieldName != "gender" || line[3].Value != "F" {
-		t.Errorf("Row 6 Column 4 does not match %+v", line[3])
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(line) != 1 {
-		t.Error("expected row 7 to have a length of 1 but got", len(line), "instead")
+	if line.Comment != "this data is probably not accurate" {
+		t.Errorf("Expected row to have a comment but got %+v", err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "fName" || line.Fields[0].Value != "john" {
+		t.Errorf("Row 5 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "lName" || line.Fields[1].Value != "doe" {
+		t.Errorf("Row 5 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "dob" || line.Fields[2].Value != "2023-01-01" {
+		t.Errorf("Row 5 Column 3 does not match %+v", line.Fields[2])
+	}
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "gender" || line.Fields[3].Value != "M" {
+		t.Errorf("Row 5 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != "fName" || line.Fields[0].Value != "jane" {
+		t.Errorf("Row 6 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != "lName" || line.Fields[1].Value != "smith" {
+		t.Errorf("Row 6 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != "dob" || line.Fields[2].Value != "2024-01-01" {
+		t.Errorf("Row 6 Column 3 does not match %+v", line.Fields[2])
+	}
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != "gender" || line.Fields[3].Value != "F" {
+		t.Errorf("Row 6 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(line.Fields) != 0 {
+		t.Error("expected row 7 to have a length of 1 but got", len(line.Fields), "instead")
 		return
 	}
 
-	if !line[0].IsComment {
-		t.Error("expected row 7 to contain a comment but got", line[0], "instead")
+	if len(line.Comment) < 0 {
+		t.Error("expected row 7 to contain a comment but got", line.Comment, "instead")
 	}
 	if r.CurrentRow() != 7 {
 		t.Error("expected current row to be 7 but got", r.CurrentRow(), "instead")
@@ -801,49 +797,49 @@ func TestReadColumnAndDataWithDoubleQuotes(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !line[0].IsHeader || line[0].Value != `"fName"s` {
-		t.Errorf("Header 1 does not match %+v", line[0])
+	if !line.Fields[0].IsHeader || line.Fields[0].Value != `"fName"s` {
+		t.Errorf("Header 1 does not match %+v", line.Fields[0])
 	}
-	if !line[1].IsHeader || line[1].Value != `"lName"` {
-		t.Errorf("Header 2 does not match %+v", line[1])
+	if !line.Fields[1].IsHeader || line.Fields[1].Value != `"lName"` {
+		t.Errorf("Header 2 does not match %+v", line.Fields[1])
 	}
-	if !line[2].IsHeader || line[2].Value != `"dob"` {
-		t.Errorf("Header 3 does not match %+v", line[2])
+	if !line.Fields[2].IsHeader || line.Fields[2].Value != `"dob"` {
+		t.Errorf("Header 3 does not match %+v", line.Fields[2])
 	}
-	if !line[3].IsHeader || line[3].Value != `"gender"` {
-		t.Errorf("Header 4 does not match %+v", line[3])
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if line[0].IsHeader || line[0].FieldName != `"fName"s` || line[0].Value != "john" {
-		t.Errorf("Row 1 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != `"lName"` || line[1].Value != `hungry "doe"` {
-		t.Errorf("Row 1 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != `"dob"` || line[2].Value != "2023-01-01" {
-		t.Errorf("Row 1 Column 3 does not match %+v", line[2])
-	}
-	if line[3].IsHeader || line[3].FieldName != `"gender"` || line[3].Value != "M" {
-		t.Errorf("Row 1 Column 4 does not match %+v", line[3])
+	if !line.Fields[3].IsHeader || line.Fields[3].Value != `"gender"` {
+		t.Errorf("Header 4 does not match %+v", line.Fields[3])
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if line[0].IsHeader || line[0].FieldName != `"fName"s` || line[0].Value != "jane" {
-		t.Errorf("Row 2 Column 1 does not match %+v", line[0])
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != `"fName"s` || line.Fields[0].Value != "john" {
+		t.Errorf("Row 1 Column 1 does not match %+v", line.Fields[0])
 	}
-	if line[1].IsHeader || line[1].FieldName != `"lName"` || line[1].Value != "smith" {
-		t.Errorf("Row 2 Column 2 does not match %+v", line[1])
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != `"lName"` || line.Fields[1].Value != `hungry "doe"` {
+		t.Errorf("Row 1 Column 2 does not match %+v", line.Fields[1])
 	}
-	if line[2].IsHeader || line[2].FieldName != `"dob"` || line[2].Value != "2024-01-01" {
-		t.Errorf("Row 2 Column 3 does not match %+v", line[2])
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != `"dob"` || line.Fields[2].Value != "2023-01-01" {
+		t.Errorf("Row 1 Column 3 does not match %+v", line.Fields[2])
 	}
-	if line[3].IsHeader || line[3].FieldName != `"gender"` || line[3].Value != "F" {
-		t.Errorf("Row 2 Column 4 does not match %+v", line[3])
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != `"gender"` || line.Fields[3].Value != "M" {
+		t.Errorf("Row 1 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != `"fName"s` || line.Fields[0].Value != "jane" {
+		t.Errorf("Row 2 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != `"lName"` || line.Fields[1].Value != "smith" {
+		t.Errorf("Row 2 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != `"dob"` || line.Fields[2].Value != "2024-01-01" {
+		t.Errorf("Row 2 Column 3 does not match %+v", line.Fields[2])
+	}
+	if line.Fields[3].IsHeader || line.Fields[3].FieldName != `"gender"` || line.Fields[3].Value != "F" {
+		t.Errorf("Row 2 Column 4 does not match %+v", line.Fields[3])
 	}
 }
 
@@ -859,49 +855,49 @@ func TestNullRemainingColumns(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !line[0].IsHeader || line[0].Value != `"fName"s` {
-		t.Errorf("Header 1 does not match %+v", line[0])
+	if !line.Fields[0].IsHeader || line.Fields[0].Value != `"fName"s` {
+		t.Errorf("Header 1 does not match %+v", line.Fields[0])
 	}
-	if !line[1].IsHeader || line[1].Value != `"lName"` {
-		t.Errorf("Header 2 does not match %+v", line[1])
+	if !line.Fields[1].IsHeader || line.Fields[1].Value != `"lName"` {
+		t.Errorf("Header 2 does not match %+v", line.Fields[1])
 	}
-	if !line[2].IsHeader || line[2].Value != `"dob"` {
-		t.Errorf("Header 3 does not match %+v", line[2])
+	if !line.Fields[2].IsHeader || line.Fields[2].Value != `"dob"` {
+		t.Errorf("Header 3 does not match %+v", line.Fields[2])
 	}
-	if !line[3].IsHeader || line[3].Value != `"gender"` {
-		t.Errorf("Header 4 does not match %+v", line[3])
-	}
-	line, err = r.Read()
-	if err != nil {
-		t.Error(err)
-	}
-	if line[0].IsHeader || line[0].FieldName != `"fName"s` || line[0].Value != "john" {
-		t.Errorf("Row 1 Column 1 does not match %+v", line[0])
-	}
-	if line[1].IsHeader || line[1].FieldName != `"lName"` || line[1].Value != `hungry "doe"` {
-		t.Errorf("Row 1 Column 2 does not match %+v", line[1])
-	}
-	if line[2].IsHeader || line[2].FieldName != `"dob"` || line[2].Value != "2023-01-01" {
-		t.Errorf("Row 1 Column 3 does not match %+v", line[2])
-	}
-	if !line[3].IsNull || line[3].FieldName != `"gender"` || line[3].Value != "" {
-		t.Errorf("Row 1 Column 4 does not match %+v", line[3])
+	if !line.Fields[3].IsHeader || line.Fields[3].Value != `"gender"` {
+		t.Errorf("Header 4 does not match %+v", line.Fields[3])
 	}
 	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 	}
-	if line[0].IsHeader || line[0].FieldName != `"fName"s` || line[0].Value != "jane" {
-		t.Errorf("Row 2 Column 1 does not match %+v", line[0])
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != `"fName"s` || line.Fields[0].Value != "john" {
+		t.Errorf("Row 1 Column 1 does not match %+v", line.Fields[0])
 	}
-	if line[1].IsHeader || line[1].FieldName != `"lName"` || line[1].Value != "smith" {
-		t.Errorf("Row 2 Column 2 does not match %+v", line[1])
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != `"lName"` || line.Fields[1].Value != `hungry "doe"` {
+		t.Errorf("Row 1 Column 2 does not match %+v", line.Fields[1])
 	}
-	if line[2].IsHeader || line[2].FieldName != `"dob"` || line[2].Value != "2024-01-01" {
-		t.Errorf("Row 2 Column 3 does not match %+v", line[2])
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != `"dob"` || line.Fields[2].Value != "2023-01-01" {
+		t.Errorf("Row 1 Column 3 does not match %+v", line.Fields[2])
 	}
-	if !line[3].IsNull || line[3].FieldName != `"gender"` || line[3].Value != "" {
-		t.Errorf("Row 2 Column 4 does not match %+v", line[3])
+	if !line.Fields[3].IsNull || line.Fields[3].FieldName != `"gender"` || line.Fields[3].Value != "" {
+		t.Errorf("Row 1 Column 4 does not match %+v", line.Fields[3])
+	}
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+	}
+	if line.Fields[0].IsHeader || line.Fields[0].FieldName != `"fName"s` || line.Fields[0].Value != "jane" {
+		t.Errorf("Row 2 Column 1 does not match %+v", line.Fields[0])
+	}
+	if line.Fields[1].IsHeader || line.Fields[1].FieldName != `"lName"` || line.Fields[1].Value != "smith" {
+		t.Errorf("Row 2 Column 2 does not match %+v", line.Fields[1])
+	}
+	if line.Fields[2].IsHeader || line.Fields[2].FieldName != `"dob"` || line.Fields[2].Value != "2024-01-01" {
+		t.Errorf("Row 2 Column 3 does not match %+v", line.Fields[2])
+	}
+	if !line.Fields[3].IsNull || line.Fields[3].FieldName != `"gender"` || line.Fields[3].Value != "" {
+		t.Errorf("Row 2 Column 4 does not match %+v", line.Fields[3])
 	}
 }
 
@@ -996,54 +992,54 @@ func TestReadDataWithNewLineInValue(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 3 {
-		t.Error("expected to have 3 fields but got", len(fields), "instead")
+	if len(line.Fields) != 3 {
+		t.Error("expected to have 3 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "first name" {
-		t.Error("expect header 1 to be [first name] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "first name" {
+		t.Error("expect header 1 to be [first name] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "last name" {
-		t.Error("expect header 2 to be [last name] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "last name" {
+		t.Error("expect header 2 to be [last name] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "comment" {
-		t.Error("expect header 3 to be [comment] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "comment" {
+		t.Error("expect header 3 to be [comment] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "john" {
-		t.Error("expect line", r.CurrentRow(), "field 1 to be [john] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "john" {
+		t.Error("expect line", r.CurrentRow(), "field 1 to be [john] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "doe" {
-		t.Error("expect line", r.CurrentRow(), "field 2 to be [doe] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "doe" {
+		t.Error("expect line", r.CurrentRow(), "field 2 to be [doe] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "favorite colors:\nred\nblue\ngreen" {
-		t.Error("expect line", r.CurrentRow(), "field 3 to be [favorite colors:\\nred\\nblue\\ngreen] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "favorite colors:\nred\nblue\ngreen" {
+		t.Error("expect line", r.CurrentRow(), "field 3 to be [favorite colors:\\nred\\nblue\\ngreen] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "jane" {
-		t.Error("expect line", r.CurrentRow(), "field 1 to be [jane] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "jane" {
+		t.Error("expect line", r.CurrentRow(), "field 1 to be [jane] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "doe" {
-		t.Error("expect line", r.CurrentRow(), "field 2 to be [doe] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "doe" {
+		t.Error("expect line", r.CurrentRow(), "field 2 to be [doe] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "favorite colors:\ngreen\nyellow" {
-		t.Error("expect line", r.CurrentRow(), "field 3 to be [favorite colors:\\ngreen\\nyellow] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "favorite colors:\ngreen\nyellow" {
+		t.Error("expect line", r.CurrentRow(), "field 3 to be [favorite colors:\\ngreen\\nyellow] but got", line.Fields[2].Value, "instead")
 	}
 }
 
@@ -1055,63 +1051,63 @@ func TestReadDataWithSpaces(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Given Name" {
-		t.Error("expect header 1 to be [Given Name] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Given Name" {
+		t.Error("expect header 1 to be [Given Name] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "Family Name" {
-		t.Error("expect header 2 to be [Family Name] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "Family Name" {
+		t.Error("expect header 2 to be [Family Name] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Date of Birth" {
-		t.Error("expect header 3 to be [Date of Birth] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Date of Birth" {
+		t.Error("expect header 3 to be [Date of Birth] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "Favorite Color" {
-		t.Error("expect header 4 to be [Favorite Color] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "Favorite Color" {
+		t.Error("expect header 4 to be [Favorite Color] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Jean Smith" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Jean Smith] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Jean Smith" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Jean Smith] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "Le Croix" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Le Croix] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "Le Croix" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Le Croix] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Jan 01 2023" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Jan 01 2023] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Jan 01 2023" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Jan 01 2023] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "Space Purple" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [Space Purple] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "Space Purple" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [Space Purple] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Mary Jane" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Mary Jane] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Mary Jane" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Mary Jane] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "Vasquez Rojas" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Vasquez Rojas] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "Vasquez Rojas" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Vasquez Rojas] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Feb 02 2021" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Feb 02 2021] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Feb 02 2021" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Feb 02 2021] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "Midnight Grey" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [Midnight Grey] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "Midnight Grey" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [Midnight Grey] but got", line.Fields[3].Value, "instead")
 	}
 }
 
@@ -1123,63 +1119,63 @@ func TestReadDataWithoutSpace(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "fName" {
-		t.Error("expect header 1 to be [fName] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "fName" {
+		t.Error("expect header 1 to be [fName] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "lName" {
-		t.Error("expect header 2 to be [lName] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "lName" {
+		t.Error("expect header 2 to be [lName] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "dob" {
-		t.Error("expect header 3 to be [dob] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "dob" {
+		t.Error("expect header 3 to be [dob] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "gender" {
-		t.Error("expect header 4 to be [gender] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "gender" {
+		t.Error("expect header 4 to be [gender] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "john" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "john" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "doe" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "doe" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "2023-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "2023-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "M" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "M" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "jane" {
-		t.Error("expect row 3, field 1 to be [jane] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "jane" {
+		t.Error("expect row 3, field 1 to be [jane] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "smith" {
-		t.Error("expect row 3, field 2 to be [smith] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "smith" {
+		t.Error("expect row 3, field 2 to be [smith] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "2024-01-01" {
-		t.Error("expect row 3, field 3 to be [2024-01-01] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "2024-01-01" {
+		t.Error("expect row 3, field 3 to be [2024-01-01] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "F" {
-		t.Error("expect row 3, field 4 to be [F] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "F" {
+		t.Error("expect row 3, field 4 to be [F] but got", line.Fields[3].Value, "instead")
 	}
 }
 
@@ -1191,63 +1187,63 @@ func TestReadOmittedColumnsToNull(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "fName" {
-		t.Error("expect header 1 to be [fName] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "fName" {
+		t.Error("expect header 1 to be [fName] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "lName" {
-		t.Error("expect header 2 to be [lName] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "lName" {
+		t.Error("expect header 2 to be [lName] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "dob" {
-		t.Error("expect header 3 to be [dob] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "dob" {
+		t.Error("expect header 3 to be [dob] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "gender" {
-		t.Error("expect header 4 to be [gender] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "gender" {
+		t.Error("expect header 4 to be [gender] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "john" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "john" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "doe" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "doe" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "2023-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "2023-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", line.Fields[2].Value, "instead")
 	}
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [NULL] but got", fields[3].Value, "instead")
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [NULL] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "jane" {
-		t.Error("expect row 3, field 1 to be [jane] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "jane" {
+		t.Error("expect row 3, field 1 to be [jane] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "smith" {
-		t.Error("expect row 3, field 2 to be [smith] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "smith" {
+		t.Error("expect row 3, field 2 to be [smith] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "2024-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2024-01-01] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "2024-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2024-01-01] but got", line.Fields[2].Value, "instead")
 	}
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [NULL] but got", fields[3].Value, "instead")
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [NULL] but got", line.Fields[3].Value, "instead")
 	}
 }
 
@@ -1259,99 +1255,99 @@ func TestReadSimpleWithTabs(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 3 {
-		t.Error("expected to have 3 fields but got", len(fields), "instead")
+	if len(line.Fields) != 3 {
+		t.Error("expected to have 3 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Name" {
-		t.Error("expect header 1 to be [Name] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Name" {
+		t.Error("expect header 1 to be [Name] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "Age" {
-		t.Error("expect header 2 to be [Age] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "Age" {
+		t.Error("expect header 2 to be [Age] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Color" {
-		t.Error("expect header 3 to be [Color] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Color" {
+		t.Error("expect header 3 to be [Color] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Scott" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Scott] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Scott" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Scott] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "21" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [21] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "21" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [21] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Red" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Red] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Red" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Red] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Josh" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Josh] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Josh" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Josh] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "18" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [18] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "18" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [18] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Blue" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Blue] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Blue" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Blue] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Jane" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Jane] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Jane" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Jane] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "34" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [34] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "34" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [34] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Yellow" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Yellow] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Yellow" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Yellow] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Bob" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Bob] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Bob" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Bob] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "16" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [16] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "16" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [16] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Pink" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Pink] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Pink" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Pink] but got", line.Fields[2].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if fields[0].Value != "Ashley" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Ashley] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Ashley" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Ashley] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "47" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [47] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "47" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [47] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Red" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [Red] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Red" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [Red] but got", line.Fields[2].Value, "instead")
 	}
 }
 
@@ -1363,90 +1359,90 @@ func TestReadWithComments(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 data fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "fName" {
-		t.Error("expect header 1 to be [fName] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "fName" {
+		t.Error("expect header 1 to be [fName] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "lName" {
-		t.Error("expect header 2 to be [lName] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "lName" {
+		t.Error("expect header 2 to be [lName] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "dob" {
-		t.Error("expect header 3 to be [dob] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "dob" {
+		t.Error("expect header 3 to be [dob] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "gender" {
-		t.Error("expect header 4 to be [gender] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "gender" {
+		t.Error("expect header 4 to be [gender] but got", line.Fields[3].Value, "instead")
 	}
-	if fields[4].Value != "these are headers" || !fields[4].IsComment {
-		t.Error("expect header 5 to be [these are headers] but got", fields[4].Value, "instead")
+	if line.Comment != "these are headers" {
+		t.Error("expect comment in header to be [these are headers] but got", line.Comment, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
-	if fields[0].Value != "john" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "john" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "doe" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "doe" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "2023-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "2023-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "M" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "M" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", line.Fields[3].Value, "instead")
 	}
-	if fields[4].Value != "this data is probably not accurate" || !fields[4].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 5 to be [this data is probably not accurate] but got", fields[4].Value, "instead")
+	if line.Comment != "this data is probably not accurate" {
+		t.Error("expect row", r.CurrentRow(), "to have a comment be [this data is probably not accurate] but got", line.Comment, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
-	if fields[0].Value != "jane" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "jane" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "smith" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [smith] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "smith" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [smith] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "2024-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2024-01-01] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "2024-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2024-01-01] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "F" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [F] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "F" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [F] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 1 {
-		t.Error("expected to have 1 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected to have 0 data fields but got", len(line.Fields), "instead")
 		return
 	}
-	if fields[0].Value != "this is a comment" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", fields[0].Value, "instead")
+	if line.Comment != "this is a comment" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", line.Comment, "instead")
 	}
 
 }
@@ -1459,122 +1455,122 @@ func TestReadWithCEmptyLinesAndComments(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected line", r.CurrentRow(), "to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "fName" {
-		t.Error("expect header 1 to be [fName] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "fName" {
+		t.Error("expect header 1 to be [fName] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "lName" {
-		t.Error("expect header 2 to be [lName] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "lName" {
+		t.Error("expect header 2 to be [lName] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "dob" {
-		t.Error("expect header 3 to be [dob] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "dob" {
+		t.Error("expect header 3 to be [dob] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "gender" {
-		t.Error("expect header 4 to be [gender] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "gender" {
+		t.Error("expect header 4 to be [gender] but got", line.Fields[3].Value, "instead")
 	}
-	if fields[4].Value != "these are headers" || !fields[4].IsComment {
-		t.Error("expect header 5 to be [these are headers] but got", fields[4].Value, "instead")
-	}
-
-	fields, err = r.Read()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
-		return
-	}
-	fields, err = r.Read()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
-		return
-	}
-	fields, err = r.Read()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if len(fields) != 1 {
-		t.Error("expected line", r.CurrentRow(), "to have 1 fields but got", len(fields), "instead")
-		return
-	}
-	if fields[0].Value != "here we go!" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field ` to be [here we go!] but got", fields[0].Value, "instead")
+	if line.Comment != "these are headers" {
+		t.Error("expect header 5 to be [these are headers] but got", line.Comment, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected line", r.CurrentRow(), "to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
-
-	if fields[0].Value != "john" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", fields[0].Value, "instead")
-	}
-	if fields[1].Value != "doe" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", fields[1].Value, "instead")
-	}
-	if fields[2].Value != "2023-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", fields[2].Value, "instead")
-	}
-	if fields[3].Value != "M" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", fields[3].Value, "instead")
-	}
-	if fields[4].Value != "this data is probably not accurate" || !fields[4].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 5 to be [this data is probably not accurate] but got", fields[4].Value, "instead")
-	}
-
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
-	if fields[0].Value != "jane" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", fields[0].Value, "instead")
-	}
-	if fields[1].Value != "smith" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [smith] but got", fields[1].Value, "instead")
-	}
-	if fields[2].Value != "2024-01-01" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [2024-01-01] but got", fields[2].Value, "instead")
-	}
-	if fields[3].Value != "F" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [F] but got", fields[3].Value, "instead")
-	}
-
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 1 {
-		t.Error("expected to have 1 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 data fields but got", len(line.Fields), "instead")
 		return
 	}
-	if fields[0].Value != "this is a comment" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [this is a comment] but got", fields[0].Value, "instead")
+	if line.Comment != "here we go!" {
+		t.Error("expect row", r.CurrentRow(), "field ` to be [here we go!] but got", line.Comment, "instead")
+	}
+
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
+		return
+	}
+
+	if line.Fields[0].Value != "john" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", line.Fields[0].Value, "instead")
+	}
+	if line.Fields[1].Value != "doe" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [doe] but got", line.Fields[1].Value, "instead")
+	}
+	if line.Fields[2].Value != "2023-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2023-01-01] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[3].Value != "M" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [M] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Comment != "this data is probably not accurate" {
+		t.Error("expect row", r.CurrentRow(), "field 5 to be [this data is probably not accurate] but got", line.Comment, "instead")
+	}
+
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(line.Fields) != 4 {
+		t.Error("expected to have 4 fields but got", len(line.Fields), "instead")
+		return
+	}
+	if line.Fields[0].Value != "jane" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [jane] but got", line.Fields[0].Value, "instead")
+	}
+	if line.Fields[1].Value != "smith" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [smith] but got", line.Fields[1].Value, "instead")
+	}
+	if line.Fields[2].Value != "2024-01-01" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [2024-01-01] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[3].Value != "F" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [F] but got", line.Fields[3].Value, "instead")
+	}
+
+	line, err = r.Read()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(line.Fields) != 0 {
+		t.Error("expected to have 0 data fields but got", len(line.Fields), "instead")
+		return
+	}
+	if line.Comment != "this is a comment" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [this is a comment] but got", line.Comment, "instead")
 	}
 
 }
@@ -1586,54 +1582,54 @@ func TestReadInvalidCommentPlacementDueToOmittedFields(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "name" {
-		t.Error("expect header 1 to be [name] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "name" {
+		t.Error("expect header 1 to be [name] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "jersey" {
-		t.Error("expect header 2 to be [jersey] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "jersey" {
+		t.Error("expect header 2 to be [jersey] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "team" {
-		t.Error("expect header 3 to be [team] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "team" {
+		t.Error("expect header 3 to be [team] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "sport" {
-		t.Error("expect header 4 to be [sport] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "sport" {
+		t.Error("expect header 4 to be [sport] but got", line.Fields[3].Value, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "john" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "john" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [john] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "15" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [15] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "15" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [15] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "tigers" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [tigers] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "tigers" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [tigers] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "baseball" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to be [baseball] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "baseball" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to be [baseball] but got", line.Fields[3].Value, "instead")
 	}
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err == nil {
-		t.Error("expected to return an error but did not", fields)
+		t.Error("expected to return an error but did not", line)
 		return
 	}
 
@@ -1646,754 +1642,754 @@ func TestReadComplexValues(t *testing.T) {
 		return
 	}
 	r := wsv.NewReader(file)
-	fields, err := r.Read()
+	line, err := r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected line", r.CurrentRow(), "to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 data fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Country" {
-		t.Error("expect header 1 to be [Country] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Country" {
+		t.Error("expect header 1 to be [Country] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[1].Value != "Capital" {
-		t.Error("expect header 2 to be [Capital] but got", fields[1].Value, "instead")
+	if line.Fields[1].Value != "Capital" {
+		t.Error("expect header 2 to be [Capital] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].Value != "Emoji of Flag" {
-		t.Error("expect header 3 to be [Emoji of Flag] but got", fields[2].Value, "instead")
+	if line.Fields[2].Value != "Emoji of Flag" {
+		t.Error("expect header 3 to be [Emoji of Flag] but got", line.Fields[2].Value, "instead")
 	}
-	if fields[3].Value != "Interesting Facts" {
-		t.Error("expect header 4 to be [Interesting Facts] but got", fields[3].Value, "instead")
+	if line.Fields[3].Value != "Interesting Facts" {
+		t.Error("expect header 4 to be [Interesting Facts] but got", line.Fields[3].Value, "instead")
 	}
-	if fields[4].Value != "facts generated from Google's Gemini 2024-04-24" || !fields[4].IsComment {
-		t.Error("expected header 5 to be comment and have the value [facts generated from Google's Gemini 2024-04-24] but got", fields[4].Value, fields[4].IsComment, "instead")
+	if line.Comment != "facts generated from Google's Gemini 2024-04-24" {
+		t.Error("expected header 5 to be comment and have the value [facts generated from Google's Gemini 2024-04-24] but got", line.Comment, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "France" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [France] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "France" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [France] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Paris" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Paris] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇫🇷" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇫🇷] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Paris" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Paris] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "The Eiffel Tower was built for the 1889 World's Fair."+string('\n')+"It was almost torn down afterwards." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The Eiffel Tower was built for the 1889 World's Fair.\\nIt was almost torn down afterwards.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇫🇷" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇫🇷] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if line.Fields[3].Value != "The Eiffel Tower was built for the 1889 World's Fair."+string('\n')+"It was almost torn down afterwards." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The Eiffel Tower was built for the 1889 World's Fair.\\nIt was almost torn down afterwards.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Germany" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Germany] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Germany" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Germany] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Berlin" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Berlin] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇩🇪" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇩🇪] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Berlin" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Berlin] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "Germany has over 2,000 beer breweries." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Germany has over 2,000 beer breweries.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇩🇪" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇩🇪] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if line.Fields[3].Value != "Germany has over 2,000 beer breweries." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Germany has over 2,000 beer breweries.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Italy" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Italy] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Italy" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Italy] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Rome" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Rome] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇮🇹" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇮🇹] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Rome" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Rome] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "The Colosseum in Rome could hold an estimated 50,000 spectators." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The Colosseum in Rome could hold an estimated 50,000 spectators.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇮🇹" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇮🇹] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if line.Fields[3].Value != "The Colosseum in Rome could hold an estimated 50,000 spectators." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The Colosseum in Rome could hold an estimated 50,000 spectators.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected line", r.CurrentRow(), "to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 data fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Japan" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Japan] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Japan" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Japan] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Tokyo" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Tokyo] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇯🇵🇯🇵" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇯🇵🇯🇵] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Tokyo" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Tokyo] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "Japan is a volcanic archipelago with over 100 active volcanoes."+string('\n')+"The currency is the yen and the symbol is ¥." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Japan is a volcanic archipelago with over 100 active volcanoes.\\nThe currency is the yen and the symbol is ¥.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	if fields[4].Value != "has half-width characters" || !fields[4].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 5 to be a comment but got", fields[3].Value, "instead")
+	if line.Fields[2].Value != "🇯🇵🇯🇵" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇯🇵🇯🇵] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[3].Value != "Japan is a volcanic archipelago with over 100 active volcanoes."+string('\n')+"The currency is the yen and the symbol is ¥." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Japan is a volcanic archipelago with over 100 active volcanoes.\\nThe currency is the yen and the symbol is ¥.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	if line.Comment != "has half-width characters" {
+		t.Error("expect row", r.CurrentRow(), "field 5 to be a comment but got", line.Fields[3].Value, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Spain" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Spain] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Spain" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Spain] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Madrid" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Madrid] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇪🇸" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇪🇸] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Madrid" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Madrid] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "Spain has the second highest number of UNESCO World Heritage Sites in the world." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Spain has the second highest number of UNESCO World Heritage Sites in the world.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇪🇸" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇪🇸] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if line.Fields[3].Value != "Spain has the second highest number of UNESCO World Heritage Sites in the world." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [Spain has the second highest number of UNESCO World Heritage Sites in the world.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "United Kingdom" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [United Kingdom] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "United Kingdom" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [United Kingdom] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "London" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [London] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇬🇧" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇬🇧] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "London" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [London] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "The United Kingdom is a parliamentary monarchy with a rich history dating back centuries." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The United Kingdom is a parliamentary monarchy with a rich history dating back centuries.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇬🇧" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇬🇧] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if line.Fields[3].Value != "The United Kingdom is a parliamentary monarchy with a rich history dating back centuries." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The United Kingdom is a parliamentary monarchy with a rich history dating back centuries.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 1 {
-		t.Error("expected line", r.CurrentRow(), "to have 1 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 data fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != " emphasis on 50 with double quotes" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [ emphasis on 50 with double quotes] but got", fields[0].Value, "instead")
+	if line.Comment != " emphasis on 50 with double quotes" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [ emphasis on 50 with double quotes] but got", line.Comment, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead", fields)
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead", line)
 		return
 	}
 
-	if fields[0].Value != "United States of America" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [United States of America] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "United States of America" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [United States of America] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Washington D.C." {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Washington D.C.] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇺🇸 🏴‍☠️" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇺🇸 🏴‍☠️] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Washington D.C." {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Washington D.C.] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if fields[3].Value != "The United States of America is a federal republic with \"50\" states." {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The United States of America is a federal republic with \"50\" states.] but got", fields[3].FieldName, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇺🇸 🏴‍☠️" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇺🇸 🏴‍☠️] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if line.Fields[3].Value != "The United States of America is a federal republic with \"50\" states." {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [The United States of America is a federal republic with \"50\" states.] but got", line.Fields[3].FieldName, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 1 {
-		t.Error("expected line", r.CurrentRow(), "to have 1 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 data fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != " update the remaining" || !fields[0].IsComment {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [ update the remaining] but got", fields[0].Value, "instead")
+	if line.Comment != " update the remaining" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [ update the remaining] but got", line.Comment, "instead")
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "India" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [India] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "India" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [India] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇮🇳" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇮🇳] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Errorf("expect row %d field 4 to have value [NULL] but got %+v instead", r.CurrentRow(), fields[3])
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇮🇳" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇮🇳] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Errorf("expect row %d field 4 to have value [NULL] but got %+v instead", r.CurrentRow(), line.Fields[3])
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 5 {
-		t.Error("expected line", r.CurrentRow(), "to have 5 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 data fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Canada" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Canada] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Canada" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Canada] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Ottawa" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Ottawa] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Ottawa" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Ottawa] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	if fields[4].Value != "need to add facts for the remaining" {
-		t.Error("expect row", r.CurrentRow(), "field 5 to have value [need to add facts for the remaining] but got", fields[4].Value, "instead")
+	if line.Fields[2].Value != "" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	if line.Comment != "need to add facts for the remaining" {
+		t.Error("expect row", r.CurrentRow(), "field 5 to have value [need to add facts for the remaining] but got", line.Comment, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Australia" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Australia] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Australia" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Australia] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Canberra" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Canberra] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇦🇺" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇦🇺] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Canberra" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Canberra] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇦🇺" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇦🇺] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Brazil" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Brazil] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Brazil" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Brazil] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Brasília" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Brasília] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇧🇷" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇧🇷] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Brasília" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Brasília] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇧🇷" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇧🇷] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Argentina" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Argentina] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Argentina" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Argentina] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Buenos Aires" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Buenos Aires] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇦🇷" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇦🇷] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Buenos Aires" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Buenos Aires] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇦🇷" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇦🇷] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Mexico" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Mexico] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Mexico" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Mexico] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Mexico City" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Mexico City] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇲🇽" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇲🇽] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Mexico City" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Mexico City] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇲🇽" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇲🇽] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	fields, err = r.Read()
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "China" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [China] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "China" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [China] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Beijing" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Beijing] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇨🇳" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇨🇳] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Beijing" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Beijing] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇨🇳" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇨🇳] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 4 {
-		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(fields), "instead")
+	if len(line.Fields) != 4 {
+		t.Error("expected line", r.CurrentRow(), "to have 4 fields but got", len(line.Fields), "instead")
 		return
 	}
 
-	if fields[0].Value != "Russia" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to be [Russia] but got", fields[0].Value, "instead")
+	if line.Fields[0].Value != "Russia" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to be [Russia] but got", line.Fields[0].Value, "instead")
 	}
-	if fields[0].FieldName != "Country" {
-		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", fields[0].FieldName, "instead")
-	}
-
-	if fields[1].Value != "Moscow" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to be [Moscow] but got", fields[1].Value, "instead")
-	}
-	if fields[1].FieldName != "Capital" {
-		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", fields[1].FieldName, "instead")
+	if line.Fields[0].FieldName != "Country" {
+		t.Error("expect row", r.CurrentRow(), "field 1 to have field name [Country] but got", line.Fields[0].FieldName, "instead")
 	}
 
-	if fields[2].Value != "🇷🇺" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇷🇺] but got", fields[2].Value, "instead")
+	if line.Fields[1].Value != "Moscow" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to be [Moscow] but got", line.Fields[1].Value, "instead")
 	}
-	if fields[2].FieldName != "Emoji of Flag" {
-		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", fields[2].FieldName, "instead")
-	}
-
-	if !fields[3].IsNull {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", fields[3].Value, "instead")
-	}
-	if fields[3].FieldName != "Interesting Facts" {
-		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", fields[3].FieldName, "instead")
+	if line.Fields[1].FieldName != "Capital" {
+		t.Error("expect row", r.CurrentRow(), "field 2 to have field name [Capital] but got", line.Fields[1].FieldName, "instead")
 	}
 
-	fields, err = r.Read()
+	if line.Fields[2].Value != "🇷🇺" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to be [🇷🇺] but got", line.Fields[2].Value, "instead")
+	}
+	if line.Fields[2].FieldName != "Emoji of Flag" {
+		t.Error("expect row", r.CurrentRow(), "field 3 to have field name [Emoji of Flag] but got", line.Fields[2].FieldName, "instead")
+	}
+
+	if !line.Fields[3].IsNull {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have value [NULL] but got", line.Fields[3].Value, "instead")
+	}
+	if line.Fields[3].FieldName != "Interesting Facts" {
+		t.Error("expect row", r.CurrentRow(), "field 4 to have field name [Interesting Facts] but got", line.Fields[3].FieldName, "instead")
+	}
+
+	line, err = r.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(fields) != 0 {
-		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(fields), "instead")
+	if len(line.Fields) != 0 {
+		t.Error("expected line", r.CurrentRow(), "to have 0 fields but got", len(line.Fields), "instead")
 		return
 	}
 	_, err = r.Read()

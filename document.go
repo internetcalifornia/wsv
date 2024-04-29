@@ -219,10 +219,8 @@ func (doc *document) CommentFor(ln int) (string, error) {
 	}
 	line := doc.lines[ln-1]
 
-	for _, field := range line.fields {
-		if field.IsComment {
-			return field.Value, nil
-		}
+	if len(line.Comment) > 0 {
+		return line.Comment, nil
 	}
 	msg := fmt.Errorf("comment not found for row %d", ln)
 	return "", msg

@@ -69,11 +69,12 @@ var (
 )
 
 type Reader struct {
-	numLine             int
-	offset              int64
-	rawBuffer           []byte
-	FieldsPerRecord     int
-	Comments            map[int]*RecordField
+	numLine         int
+	offset          int64
+	rawBuffer       []byte
+	FieldsPerRecord int
+	lines           []readerLine
+
 	headers             []string
 	IncludesHeader      bool
 	IsTabular           bool
@@ -86,6 +87,15 @@ func (r *Reader) Headers() []string {
 	return r.headers
 }
 
+type readerLine struct {
+	Fields  []RecordField
+	Comment string
+	// Lines are 1-indexed
+	line int
+	// count of data fields, has a getter readerLine.FieldCount()
+	fieldCount int
+}
+
 type RecordField struct {
 	IsNull     bool
 	Value      string
@@ -93,20 +103,6 @@ type RecordField struct {
 	RowIndex   int
 	FieldName  string
 	IsHeader   bool
-	IsComment  bool
-}
-
-// Returns a comment if one exists for the rows or returns an error
-// Rows are 1-indexed
-func (r *Reader) CommentFor(row int) (string, error) {
-
-	for r, field := range r.Comments {
-		if r == row && field.IsComment {
-			return field.Value, nil
-		}
-	}
-	msg := fmt.Errorf("comment not found for row %d", row)
-	return "", msg
 }
 
 func getIndexOfSlice[T any](s []T, i int) (*T, error) {
@@ -161,7 +157,7 @@ func NewReader(r io.Reader) *Reader {
 		IsTabular:           true,
 		IncludesHeader:      true,
 		NullTrailingColumns: true,
-		Comments:            make(map[int]*RecordField),
+		lines:               make([]readerLine, 0),
 	}
 }
 
@@ -183,7 +179,7 @@ func (r *Reader) IndexedAt(n string) []int {
 
 }
 
-func Parse(wsvFile string) ([][]RecordField, error) {
+func Parse(wsvFile string) ([]readerLine, error) {
 	file, err := os.Open(wsvFile)
 	if err != nil {
 		return nil, err
@@ -194,7 +190,7 @@ func Parse(wsvFile string) ([][]RecordField, error) {
 	return records, err
 }
 
-func (r *Reader) ReadAll() (records [][]RecordField, err error) {
+func (r *Reader) ReadAll() (records []readerLine, err error) {
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
@@ -442,80 +438,75 @@ func (r *Reader) CurrentRow() int {
 // The partial record contains all fields read before the error.
 // If there is no data left to be read, Read returns an empty RecordField slice, io.EOF.
 // Subsequent calls to Read after io.EOF returns an empty RecordFieldSlice, wsv.ErrReaderEnded
-func (r *Reader) Read() ([]RecordField, error) {
-	var line []byte
+func (r *Reader) Read() (readerLine, error) {
+	var data []byte
 	var errRead error
-	records := make([]RecordField, 0)
-	if r.ended {
-		return records, ErrReaderEnded
+	line := readerLine{
+		Fields:     make([]RecordField, 0),
+		fieldCount: 0,
 	}
-	line, errRead = r.readLine()
+	if r.ended {
+		return line, ErrReaderEnded
+	}
+	data, errRead = r.readLine()
+
 	if errRead == io.EOF {
 		r.ended = true
-		return records, io.EOF
+		return line, io.EOF
 	}
-	fields, errRead := ParseLine(r.numLine, line)
+	line.line = r.numLine
+	fields, errRead := ParseLine(r.numLine, data)
 	if errRead != nil {
-		return records, errRead
+		return line, errRead
 	}
 	for i, field := range fields {
 		if r.numLine == 1 && r.IncludesHeader && !field.IsComment {
 			r.headers = append(r.headers, field.Value)
-			d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: true, FieldName: field.Value, IsComment: false}
-			records = append(records, d)
+			d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: true, FieldName: field.Value}
+			line.Fields = append(line.Fields, d)
+			line.fieldCount++
 			continue
 		}
 		if field.IsComment {
 			// comments must be the first and only value or the last value parsed, if preceding fields are not explicitly defined return an error
 			if r.numLine > 1 && i < len(r.headers) && i != 0 {
-				return records, &ParseError{Line: r.numLine, Column: 0, Err: ErrCommentPlacement}
+				return line, &ParseError{Line: r.numLine, Column: 0, Err: ErrCommentPlacement}
 			}
-			d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: field.Value, IsComment: true}
-			r.Comments[r.numLine] = &d
-			records = append(records, d)
+			line.Comment = field.Value
 			continue
 		}
-		recCount := lenOfRecordsWithoutComments(records)
-		if r.IsTabular && r.IncludesHeader && len(r.headers) < recCount {
-			return records, &ParseError{Line: r.numLine, Column: 0, Err: ErrFieldCount}
+		line.fieldCount++
+
+		if r.IsTabular && r.IncludesHeader && len(r.headers) < line.fieldCount {
+			return line, &ParseError{Line: r.numLine, Column: 0, Err: ErrFieldCount}
 		}
 		fieldName := columnName(r.headers, i)
 		d := RecordField{IsNull: field.IsNull, Value: field.Value, RowIndex: r.numLine, FieldIndex: i, IsHeader: false, FieldName: fieldName}
-		records = append(records, d)
+		line.Fields = append(line.Fields, d)
 	}
 
-	if len(records) == 0 {
-		return records, errRead
+	if len(line.Fields) == 0 {
+		return line, errRead
 	}
 
-	if len(records) == 1 && records[0].IsComment {
-		return records, errRead
+	if len(line.Fields) == 0 && len(line.Comment) == 0 {
+		return line, errRead
 	}
 
-	if r.numLine != 1 && r.NullTrailingColumns && len(records) < len(r.headers) {
-		x := len(r.headers) - len(records)
-		o := len(records)
+	if r.numLine != 1 && r.NullTrailingColumns && len(line.Fields) < len(r.headers) {
+		x := len(r.headers) - len(line.Fields)
+		o := len(line.Fields)
 		for i := range x {
 			h := o + i
 			cname := columnName(r.headers, h)
 			rec := RecordField{IsNull: true, Value: "", FieldIndex: h, RowIndex: r.numLine, FieldName: cname, IsHeader: false}
-			records = append(records, rec)
+			line.Fields = append(line.Fields, rec)
+			line.fieldCount++
 		}
 	}
+	r.lines = append(r.lines, line)
+	return line, errRead
 
-	return records, errRead
-
-}
-
-func lenOfRecordsWithoutComments(r []RecordField) int {
-	c := 0
-	for _, rec := range r {
-		if rec.IsComment {
-			continue
-		}
-		c++
-	}
-	return c
 }
 
 func nextRune(b []byte) rune {
