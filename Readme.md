@@ -5,7 +5,7 @@ This is an implementation of WSV in Go as described by [https://github.com/Stenw
 ## Getting Started
 
 ```bash
-go get https://github.com/internetcalifornia/wsv/v2
+go get github.com/internetcalifornia/wsv/v2
 ```
 
 ## Reading Usage
