@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	doc "github.com/internetcalifornia/wsv/v1/document"
-	"github.com/internetcalifornia/wsv/v1/internal"
-	"github.com/internetcalifornia/wsv/v1/reader"
+	doc "github.com/internetcalifornia/wsv/v2/document"
+	"github.com/internetcalifornia/wsv/v2/internal"
+	"github.com/internetcalifornia/wsv/v2/reader"
 )
 
 func TestQuotedValuesLine(t *testing.T) {
@@ -2573,7 +2573,7 @@ func TestReadComplexValues(t *testing.T) {
 	}
 
 	_, err = r.Read()
-	if err != internal.ErrReaderEnded {
+	if err != reader.ErrReaderEnded {
 		t.Error("expected an error ErrReaderEnded")
 	}
 }

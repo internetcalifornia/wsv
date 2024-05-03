@@ -1,9 +1,14 @@
 package document
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/internetcalifornia/wsv/v1/internal"
+	"github.com/internetcalifornia/wsv/v2/internal"
+)
+
+var (
+	ErrNotEnoughLines = errors.New("document does not have more than 1 line")
 )
 
 type documentLine struct {
@@ -19,6 +24,7 @@ type documentLine struct {
 
 type DocumentLine interface {
 	// determine if tabular document line is valid based on the number of lines of the first row/header, returns true, nil if has the correct number of data fields
+	//
 	// returns false, and an error documenting the difference
 	Validate() (bool, error)
 	// Append a value to the end of the line
@@ -39,6 +45,9 @@ type DocumentLine interface {
 	UpdateComment(val string)
 	// Get the value of comment for the line
 	Comment() string
+	// Update the field name for the field at the given index
+	//
+	// ErrFieldNotFound is returned if there is no field at the
 	UpdateFieldName(fieldIndex int, val string) error
 }
 
@@ -70,7 +79,7 @@ func (line *documentLine) Append(val string) error {
 	fieldInd := len(line.fields)
 	err := line.checkFieldIndex(fieldInd)
 	if err != nil {
-		return internal.ErrFieldCount
+		return ErrFieldCount
 	}
 
 	if line.line > 1 && len(line.doc.Headers())-1 > fieldInd {
@@ -97,7 +106,7 @@ func (line *documentLine) AppendNull() error {
 	fieldInd := len(line.fields)
 	err := line.checkFieldIndex(fieldInd)
 	if err != nil {
-		return internal.ErrFieldCount
+		return ErrFieldCount
 	}
 
 	if line.line > 1 && len(line.doc.Headers())-1 > fieldInd {
@@ -117,7 +126,7 @@ func (line *documentLine) AppendNull() error {
 
 func (line *documentLine) NextField() (*internal.RecordField, error) {
 	if len(line.fields)-1 < line.currentField {
-		return nil, internal.ErrFieldNotFound
+		return nil, ErrFieldNotFound
 	}
 	fieldInd := line.currentField
 	line.currentField++
@@ -136,7 +145,7 @@ func (line *documentLine) LineNumber() int {
 // Update field at line `fi`, `fi` is 0-index
 func (line *documentLine) UpdateField(fieldInd int, val string) error {
 	if len(line.fields)-1 < fieldInd || fieldInd < 0 {
-		return internal.ErrFieldNotFound
+		return ErrFieldNotFound
 	}
 	field := line.fields[fieldInd]
 	field.Value = val
@@ -162,21 +171,21 @@ func (line *documentLine) checkFieldIndex(fieldInd int) error {
 	}
 	if line.doc.LineCount() <= 1 {
 		// unexpected
-		return internal.ErrNotEnoughLines
+		return ErrNotEnoughLines
 	}
 	line1, _ := line.doc.Line(1)
 
 	fc := line1.FieldCount() - fieldInd
 
 	if fc <= 0 {
-		return &WriteError{err: internal.ErrFieldCount, line: line.line, fieldIndex: fieldInd}
+		return &WriteError{err: ErrFieldCount, line: line.line, fieldIndex: fieldInd}
 	}
 	return nil
 }
 
 func (line *documentLine) UpdateFieldName(fi int, val string) error {
 	if len(line.fields)-1 < fi {
-		return internal.ErrFieldCount
+		return ErrFieldCount
 	}
 	field := line.fields[fi]
 	field.FieldName = val
@@ -186,7 +195,7 @@ func (line *documentLine) UpdateFieldName(fi int, val string) error {
 
 func (line *documentLine) Field(fieldIndex int) (*internal.RecordField, error) {
 	if len(line.fields)-1 < fieldIndex {
-		return nil, internal.ErrFieldNotFound
+		return nil, ErrFieldNotFound
 	}
 	return &line.fields[fieldIndex], nil
 }

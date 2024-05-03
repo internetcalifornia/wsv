@@ -1,3 +1,4 @@
+// Parse a whitespace separated list of values
 package reader
 
 import (
@@ -11,8 +12,17 @@ import (
 
 	"unicode/utf8"
 
-	doc "github.com/internetcalifornia/wsv/v1/document"
-	"github.com/internetcalifornia/wsv/v1/internal"
+	doc "github.com/internetcalifornia/wsv/v2/document"
+	"github.com/internetcalifornia/wsv/v2/internal"
+)
+
+var (
+	ErrFieldCount       = errors.New("wrong number of fields")
+	ErrLineFeedTerm     = errors.New("line feed terminated before the line end end")
+	ErrInvalidNull      = errors.New("null `-` specifier cannot be included without white space surrounding, unless it is the last value in the line. To record a literal `-` please wrap the value in double quotes")
+	ErrBareQuote        = errors.New("bare \" in non-quoted-field")
+	ErrReaderEnded      = errors.New("reader ended, nothing left to read")
+	ErrCommentPlacement = errors.New("comments should be the last elements in a row, if immediate preceding lines are null, they cannot be omitted and must be explicitly declared")
 )
 
 // A ParseError is returned for parsing errors.
@@ -25,7 +35,7 @@ type ParseError struct {
 }
 
 func (e *ParseError) Error() string {
-	if e.Err == internal.ErrFieldCount {
+	if e.Err == ErrFieldCount {
 		return fmt.Sprintf("record on line %d: %v", e.Line, e.Err)
 	}
 	return fmt.Sprintf("parse error on line %d, column %d [%s]: %v", e.Line, e.Column, string(e.NeighborBytes), e.Err)
@@ -47,6 +57,7 @@ type Reader struct {
 	r                   *bufio.Reader
 	NullTrailingColumns bool
 	ended               bool
+	firstDataRow        int
 }
 
 func (r *Reader) Headers() []string {
@@ -79,6 +90,7 @@ func NewReader(r io.Reader) *Reader {
 		IncludesHeader:      true,
 		NullTrailingColumns: true,
 		lines:               make([]ReaderLine, 0),
+		ended:               false,
 	}
 }
 
@@ -177,17 +189,15 @@ lineLoop:
 		case '\n':
 			if i < len(line)-1 {
 				d := neighborBytes(i, line)
-				return str, &ParseError{Line: n, Column: i, Err: internal.ErrLineFeedTerm, NeighborBytes: d}
+				return str, &ParseError{Line: n, Column: i, Err: ErrLineFeedTerm, NeighborBytes: d}
 			}
 			break lineLoop
 		case '#':
 			if !doubleQuoted {
-
 				if len(line[i:]) < 2 {
 					break lineLoop
 				}
 				data = append(data, line[i+1:]...)
-
 				// since we are copying to the end of line we should remove the suffix of the line feed
 				data = bytes.TrimSuffix(data, []byte{'\n'})
 				str = append(str, LineField{IsComment: true, Value: string(data), IsNull: isNull})
@@ -248,7 +258,7 @@ lineLoop:
 					data = []byte{}
 				} else {
 					// and is not surround by double quotes we have an invalid
-					return str, &ParseError{Column: i, Err: internal.ErrInvalidNull}
+					return str, &ParseError{Column: i, Err: ErrInvalidNull}
 				}
 
 			}
@@ -260,7 +270,7 @@ lineLoop:
 				}
 				if string(data) == `"` {
 					nb := neighborBytes(i, line)
-					return str, &ParseError{Line: n, Err: internal.ErrBareQuote, Column: i, NeighborBytes: nb}
+					return str, &ParseError{Line: n, Err: ErrBareQuote, Column: i, NeighborBytes: nb}
 				}
 				str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 				isNull = false
@@ -279,12 +289,12 @@ lineLoop:
 		// the following string value could not be parsed correctly
 
 		nb := neighborBytes(startDoubleQuote, line)
-		return str, &ParseError{Column: startDoubleQuote, Err: internal.ErrBareQuote, Line: n, NeighborBytes: nb}
+		return str, &ParseError{Column: startDoubleQuote, Err: ErrBareQuote, Line: n, NeighborBytes: nb}
 	}
 	if len(data) > 0 {
 		if string(data) == `"` {
 			nb := neighborBytes(startDoubleQuote, line)
-			return str, &ParseError{Line: n, Err: internal.ErrBareQuote, Column: startDoubleQuote, NeighborBytes: nb}
+			return str, &ParseError{Line: n, Err: ErrBareQuote, Column: startDoubleQuote, NeighborBytes: nb}
 		}
 		str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 
@@ -334,7 +344,7 @@ func (r *Reader) CurrentRow() int {
 // Read returns a partial record along with the parse error.
 // The partial record contains all fields read before the error.
 // If there is no data left to be read, Read returns an empty RecordField slice, io.EOF.
-// Subsequent calls to Read after io.EOF returns an empty RecordFieldSlice, internal.ErrReaderEnded
+// Subsequent calls to Read after io.EOF returns an empty RecordFieldSlice, ErrReaderEnded
 func (r *Reader) Read() (ReaderLine, error) {
 	var data []byte
 	var errRead error
@@ -343,21 +353,24 @@ func (r *Reader) Read() (ReaderLine, error) {
 		fieldCount: 0,
 	}
 	if r.ended {
-		return &line, internal.ErrReaderEnded
+		return &line, ErrReaderEnded
 	}
 	data, errRead = r.readLine()
-
 	if errRead == io.EOF {
 		r.ended = true
 		return &line, io.EOF
 	}
 	line.line = r.numLine
+
 	fields, errRead := ParseLine(r.numLine, data)
 	if errRead != nil {
 		return &line, errRead
 	}
+	if len(fields) > 0 && r.firstDataRow == 0 && !fields[0].IsComment {
+		r.firstDataRow = r.numLine
+	}
 	for i, field := range fields {
-		if r.numLine == 1 && r.IncludesHeader && !field.IsComment {
+		if r.numLine == r.firstDataRow && r.IncludesHeader && !field.IsComment {
 			r.headers = append(r.headers, field.Value)
 			d := internal.RecordField{Value: field.Value}
 			if field.IsNull {
@@ -372,8 +385,8 @@ func (r *Reader) Read() (ReaderLine, error) {
 		}
 		if field.IsComment {
 			// comments must be the first and only value or the last value parsed, if preceding fields are not explicitly defined return an error
-			if r.numLine > 1 && i < len(r.headers) && i != 0 {
-				return &line, &ParseError{Line: r.numLine, Column: 0, Err: internal.ErrCommentPlacement}
+			if i < len(r.headers) && i != 0 {
+				return &line, &ParseError{Line: r.numLine, Column: 0, Err: ErrCommentPlacement}
 			}
 			line.comment = field.Value
 			continue
@@ -381,7 +394,7 @@ func (r *Reader) Read() (ReaderLine, error) {
 		line.fieldCount++
 
 		if r.IsTabular && r.IncludesHeader && len(r.headers) < line.fieldCount {
-			return &line, &ParseError{Line: r.numLine, Column: 0, Err: internal.ErrFieldCount}
+			return &line, &ParseError{Line: r.numLine, Column: 0, Err: ErrFieldCount}
 		}
 		fieldName := columnName(r.headers, i)
 		d := internal.RecordField{Value: field.Value, FieldName: fieldName, IsHeader: false, RowIndex: r.numLine, FieldIndex: i, IsNull: false}
@@ -471,7 +484,7 @@ func (r *Reader) ToDocument() (doc.Document, error) {
 
 	if err == io.EOF || err == nil {
 
-		return &doc, nil
+		return doc, nil
 	}
 	return nil, err
 }

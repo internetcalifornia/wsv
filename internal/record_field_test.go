@@ -3,7 +3,7 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/internetcalifornia/wsv/v1/internal"
+	"github.com/internetcalifornia/wsv/v2/internal"
 )
 
 func TestSerializeText(t *testing.T) {

@@ -1,7 +1,14 @@
 package reader
 
 import (
-	"github.com/internetcalifornia/wsv/v1/internal"
+	"errors"
+
+	"github.com/internetcalifornia/wsv/v2/internal"
+)
+
+var (
+	ErrFieldNotFound = errors.New("field does not exist")
+	ErrEndOfLine     = errors.New("no more fields left in this line")
 )
 
 type ReaderLine interface {
@@ -28,7 +35,7 @@ type readerLine struct {
 
 func (line *readerLine) NextField() (*internal.RecordField, error) {
 	if len(line.fields)-1 < line.currentField {
-		return nil, internal.ErrFieldNotFound
+		return nil, ErrEndOfLine
 	}
 	fieldInd := line.currentField
 	line.currentField++
@@ -46,7 +53,7 @@ func (line *readerLine) LineNumber() int {
 
 func (line *readerLine) Field(fieldIndex int) (*internal.RecordField, error) {
 	if len(line.fields)-1 < fieldIndex {
-		return nil, internal.ErrFieldNotFound
+		return nil, ErrFieldNotFound
 	}
 	return &line.fields[fieldIndex], nil
 }

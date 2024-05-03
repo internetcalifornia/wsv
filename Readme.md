@@ -5,7 +5,7 @@ This is an implementation of WSV in Go as described by [https://github.com/Stenw
 ## Getting Started
 
 ```bash
-go get https://github.com/internetcalifornia/wsv
+go get https://github.com/internetcalifornia/wsv/v2
 ```
 
 ## Reading Usage
@@ -16,23 +16,88 @@ When using the reader you can read line by line, `Read()` or use the convenient 
 package main
 
 import (
-    "strings"
-    "github.com/internetcalifornia/wsv"
+    "fmt"
+    "os"
+    "testing"
+
+    wsv "github.com/internetcalifornia/wsv/v2/reader"
+)
+
+func TestRead(t *testing.T) {
+    dir, ok := os.LookupEnv("PROJECT_DIR")
+    if !ok {
+        t.Error("PROJECT_DIR env not FOUND")
+        t.FailNow()
+        return
+    }
+    file, err := os.Open(fmt.Sprintf("%s/examples/sample.wsv", dir))
+    if err != nil {
+        t.Error(err)
+        t.FailNow()
+        return
+    }
+    r := wsv.NewReader(file)
+    lines, err := r.ReadAll()
+    if err != nil {
+        t.Error(err)
+        return
+    }
+lineLoop:
+    for _, line := range lines {
+        for {
+            // field
+            field, err := line.NextField()
+            if err == wsv.ErrEndOfLine {
+                continue lineLoop
+            }
+            // field.SerializeText()
+            // field.Value
+            // field.FieldName
+        }
+    }
+}
+
+```
+
+## Writing Usage
+
+When writing a document can be done with a few APIs. Below is a sample application.
+
+```go
+package main
+
+import (
+   "fmt"
+
+   wsv "github.com/internetcalifornia/wsv/v2/document"
 )
 
 func main() {
-    lines := make([]string, 0)
-    lines = append(lines, `"Given Name" "Family Name" "Date of Birth" "Favorite Color"`)
-    lines = append(lines, `"Jean Smith" "Le Croix" "Jan 01 2023" "Space Purple"`)
-    lines = append(lines, `"Mary Jane" "Vasquez Rojas" "Feb 02 2021" "Midnight Grey"`)
-    file := strings.Join(lines, string('\n'))
-    str := strings.NewReader(file)
-    r := wsv.NewReader(str)
-
-    // read line by line
-    line := r.Read()
-
-    // or read until end of file
-    // records := r.ReadAll()
+   doc := wsv.NewDocument()
+   line, err := doc.AddLine()
+   if err != nil {
+      fmt.Println(err)
+      return
+   }
+   err = line.Append("name")
+   if err != nil {
+      fmt.Println(err)
+      return
+   }
+   err = line.Append("age")
+   if err != nil {
+      fmt.Println(err)
+      return
+   }
+   err = line.Append("favorite color")
+   if err != nil {
+      fmt.Println(err)
+      return
+   }
+   err = doc.AppendLine(wsv.Field("scott"), wsv.NullField(), wsv.Field("red"))
+   if err != nil {
+      fmt.Println(err)
+      return
+   }
 }
 ```

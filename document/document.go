@@ -1,11 +1,13 @@
+// Create a document in the whitespace separated format.
 package document
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"unicode/utf8"
 
-	"github.com/internetcalifornia/wsv/v1/internal"
+	"github.com/internetcalifornia/wsv/v2/internal"
 )
 
 type WriteError struct {
@@ -16,21 +18,22 @@ type WriteError struct {
 	err error
 }
 
+var (
+	ErrFieldNotFound      = errors.New("field does not exist")
+	ErrStartedToWrite     = errors.New("document started to write, need to reset document to edit")
+	ErrInvalidPaddingRune = errors.New("only whitespace characters can be used for padding")
+	ErrOmitHeaders        = errors.New("document configured to omit headers")
+	ErrLineNotFound       = errors.New("line does not exist")
+	ErrFieldCount         = errors.New("wrong number of fields")
+)
+
 func (e *WriteError) Error() string {
 
-	if e.err == internal.ErrFieldCount {
-		return fmt.Sprintf("trying to write a value on line %d for the field index %d is not allowed because the document has %d header(s) and the writer is configured to be tabular.", e.line, e.fieldIndex, e.headerCount)
-	}
-
-	if e.err == internal.ErrStartedToWrite {
+	if e.err == ErrStartedToWrite {
 		return fmt.Sprintf("the writer already started and has currently written up until line %d, reset the writer to continue editing the document.", e.line)
 	}
 
-	if e.err == internal.ErrLineNotEditable {
-		return fmt.Sprintf("line %d is non-editable %s", e.line, e.err.Error())
-	}
-
-	if e.err == internal.ErrFieldNotFound {
+	if e.err == ErrFieldNotFound {
 		return fmt.Sprintf("field %d, %s for line %d", e.fieldIndex, e.err.Error(), e.line)
 	}
 
@@ -38,22 +41,56 @@ func (e *WriteError) Error() string {
 }
 
 type Document interface {
+	// Set the padding between values to be any from 24 unicode whitespace values, except for LineFeed. see `wsv/v1/internal` for examples
+	//
+	// If an invalid rune is provided an error will be returned and the Document will not change it's padding
 	SetPadding(rs []rune) error
+	// Add a line to the document
+	//
+	// Returns an error if `Write()` has been called, to continue editing after calling `Write()` first call `ResetWrite()`
 	AddLine() (DocumentLine, error)
+	// Returns the `DocumentLine` or an error if the line at the index does not exist.
+	//
+	// Lines are 1-indexed
 	Line(ln int) (DocumentLine, error)
+	// A convenience function for appending values to a line. Same as calling `Append(val)` and `AppendNull()` on the DocumentLine'
+	//
+	// Use the `Field(val)` and `Null()` functions to generate the structs for this function
+	AppendLine(fields ...appendLineField) error
+	// Reset the writer to the start of the document and allow the document to be modified with `AddLine()` and DocumentLine functions
 	ResetWrite()
+	// Write each line as WSV encoded value in a line. Calling `Write()` advances the pointer to next line in the document.
+	//
+	// `Write()` is the serialized values and comments of the DocumentLine and suffixed with the line feed character
+	//
+	// I `Write()` is called at the end of the document the error returned is io.EOF
 	Write() ([]byte, error)
+	// Convenience method that calls `Write()` until the end of the document and returns the results as a slice of bytes of each line in the Document
 	WriteAll() ([]byte, error)
+	// Returns the number of lines in a document
 	LineCount() int
+	// Returns a comment for the line at the given index or an error if the lines does not have a comment
+	// Line is 1-indexed
 	CommentFor(ln int) (string, error)
+	// Describes if the document is tabular, e.i. no succeeding lines can have fewer or more than the one it is preceded by
+	//
+	// Field count is determined by the 1st line (header) if document is tabular
 	Tabular() bool
+	// Update style of a document to be tabular or not
 	SetTabularStyle(tabular bool)
+	// Defines if the document has headers or not
 	HasHeaders() bool
+	// A method for setting the column width of a column, this is used to determine the padding needed to align the document when `Write()` is called
 	SetMaxColumnWidth(col int, len int)
+	// Returns the columns max width as set by `SetMaxColumnWidth()` or returns an error if there is no value in the map
 	MaxColumnWidth(col int) (int, error)
+	// Update the document to hide of show line-1 of a document, if document does not have a header this is a no-op
 	SetHideHeaderStyle(v bool)
+	// the value to show or hide the line-1 of a document if the document has headers
 	EmitHeaders() bool
+	// the headers of a document if the document has headers, empty if the document has no headers
 	Headers() []string
+	// Add headers to a document
 	AppendHeader(header string)
 }
 
@@ -73,16 +110,50 @@ type document struct {
 func (doc *document) SetPadding(rs []rune) error {
 	for _, r := range rs {
 		if !internal.IsFieldDelimiter(r) {
-			return &WriteError{err: internal.ErrInvalidPaddingRune}
+			return &WriteError{err: ErrInvalidPaddingRune}
 		}
 	}
 	doc.padding = rs
 	return nil
 }
 
+type appendLineField struct {
+	val    string
+	isNull bool
+}
+
+func Field(val string) appendLineField {
+	return appendLineField{val, false}
+}
+
+func Null() appendLineField {
+	return appendLineField{"", true}
+}
+
+func (doc *document) AppendLine(fields ...appendLineField) error {
+	line, err := doc.AddLine()
+	if err != nil {
+		return err
+	}
+	for _, field := range fields {
+		if field.isNull {
+			err = line.AppendNull()
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		err = line.Append(field.val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (doc *document) AddLine() (DocumentLine, error) {
 	if doc.startedWriting {
-		return nil, &WriteError{err: internal.ErrStartedToWrite, line: doc.currentWriteLine}
+		return nil, &WriteError{err: ErrStartedToWrite, line: doc.currentWriteLine}
 	}
 	pln := len(doc.lines)
 	line := documentLine{
@@ -100,7 +171,7 @@ func (doc *document) AddLine() (DocumentLine, error) {
 // ErrLineNotFound error
 func (doc *document) Line(ln int) (DocumentLine, error) {
 	if len(doc.lines)-1 < ln-1 || ln < 1 {
-		return nil, internal.ErrLineNotFound
+		return nil, ErrLineNotFound
 	}
 	line := doc.lines[ln-1]
 	return line, nil
@@ -123,11 +194,11 @@ func (doc *document) Write() ([]byte, error) {
 
 	line := doc.lines[doc.currentWriteLine]
 	if doc.HasHeaders() && !doc.emitHeaders && doc.currentWriteLine == 0 {
-		return buf, internal.ErrOmitHeaders
+		return buf, ErrOmitHeaders
 	}
 	// if configured to be tabular, not an empty line, and has too little/many fields compared to headers return an error
 	if doc.Tabular() && doc.currentWriteLine != 0 && line.fieldCount != 0 && line.fieldCount != len(doc.Headers()) {
-		return buf, &WriteError{line: line.line, headerCount: len(doc.Headers()), fieldIndex: line.fieldCount, err: internal.ErrFieldCount}
+		return buf, &WriteError{line: line.line, headerCount: len(doc.Headers()), fieldIndex: line.fieldCount, err: ErrFieldCount}
 	}
 
 	for i, field := range line.fields {
@@ -243,7 +314,7 @@ func (doc *document) SetMaxColumnWidth(col int, len int) {
 func (doc *document) MaxColumnWidth(col int) (int, error) {
 	v, ok := doc.maxColumnWidth[col]
 	if !ok {
-		return 0, internal.ErrFieldNotFound
+		return 0, ErrFieldNotFound
 	}
 	return v, nil
 }
@@ -253,6 +324,9 @@ func (doc *document) EmitHeaders() bool {
 }
 
 func (doc *document) SetHideHeaderStyle(v bool) {
+	if !doc.hasHeaders {
+		return
+	}
 	doc.emitHeaders = v
 }
 
@@ -284,7 +358,7 @@ func (doc *document) AppendHeader(val string) {
 	doc.headers = append(doc.headers, val)
 }
 
-func NewDocument() document {
+func NewDocument() Document {
 	doc := document{
 		tabular:          true,
 		emitHeaders:      true,
@@ -298,5 +372,5 @@ func NewDocument() document {
 		headers:    make([]string, 0),
 		hasHeaders: true,
 	}
-	return doc
+	return &doc
 }
