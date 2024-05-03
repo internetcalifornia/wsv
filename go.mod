@@ -3,3 +3,5 @@ module (
 )
 
 go 1.22.0
+
+retract v2.0.0
