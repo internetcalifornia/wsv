@@ -277,6 +277,9 @@ func TestReadColumnAndDataWithComments(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if !line.IsHeaderLine() {
+		t.Error("expected line", line.LineNumber(), "to be designated as a header but was not marked as such")
+	}
 	if field, err := line.Field(0); err != nil || !field.IsHeader || field.Value != "fName" {
 		t.Errorf("Header 1 does not match %+v %s", field, err)
 	}
@@ -356,6 +359,9 @@ func TestParseWithEmptyLinesAndComments(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if !line.IsHeaderLine() {
+		t.Error("expected line", line.LineNumber(), "to be designated as a header but was not marked as such")
+	}
 	if field, err := line.Field(0); err != nil || !field.IsHeader || field.Value != "fName" {
 		t.Errorf("Header 1 does not match %+v %s", field, err)
 	}
@@ -369,6 +375,9 @@ func TestParseWithEmptyLinesAndComments(t *testing.T) {
 		t.Errorf("Header 4 does not match %+v %s", field, err)
 	}
 	line, err = r.Read()
+	if line.IsHeaderLine() {
+		t.Error("expected line", line.LineNumber(), "to be NOT designated as a header but was not marked as such")
+	}
 	if err != nil {
 		t.Error(err)
 	}

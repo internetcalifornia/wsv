@@ -368,6 +368,9 @@ func (r *Reader) Read() (ReaderLine, error) {
 	}
 	if len(fields) > 0 && r.firstDataRow == 0 && !fields[0].IsComment {
 		r.firstDataRow = r.numLine
+		if r.IncludesHeader {
+			line.isHeaderLine = true
+		}
 	}
 	for i, field := range fields {
 		if r.numLine == r.firstDataRow && r.IncludesHeader && !field.IsComment {

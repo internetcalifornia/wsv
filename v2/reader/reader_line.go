@@ -21,6 +21,8 @@ type ReaderLine interface {
 	FieldCount() int
 	// Get the next field value, or error if at the end of the line for data
 	NextField() (*internal.RecordField, error)
+	// Returns true if the line is a slice of headers
+	IsHeaderLine() bool
 }
 
 type readerLine struct {
@@ -31,6 +33,7 @@ type readerLine struct {
 	// count of data fields, has a getter readerLine.FieldCount()
 	fieldCount   int
 	currentField int
+	isHeaderLine bool
 }
 
 func (line *readerLine) NextField() (*internal.RecordField, error) {
@@ -60,6 +63,10 @@ func (line *readerLine) Field(fieldIndex int) (*internal.RecordField, error) {
 
 func (line *readerLine) Comment() string {
 	return line.comment
+}
+
+func (line *readerLine) IsHeaderLine() bool {
+	return line.isHeaderLine
 }
 
 func (line *readerLine) UpdateComment(val string) {
