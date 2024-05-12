@@ -56,7 +56,7 @@ type Document interface {
 	// A convenience function for appending values to a line. Same as calling `Append(val)` and `AppendNull()` on the DocumentLine'
 	//
 	// Use the `Field(val)` and `Null()` functions to generate the structs for this function
-	AppendLine(fields ...appendLineField) error
+	AppendLine(fields ...appendLineField) (DocumentLine, error)
 	// Reset the writer to the start of the document and allow the document to be modified with `AddLine()` and DocumentLine functions
 	ResetWrite()
 	// Write each line as WSV encoded value in a line. Calling `Write()` advances the pointer to next line in the document.
@@ -130,25 +130,25 @@ func Null() appendLineField {
 	return appendLineField{"", true}
 }
 
-func (doc *document) AppendLine(fields ...appendLineField) error {
+func (doc *document) AppendLine(fields ...appendLineField) (DocumentLine, error) {
 	line, err := doc.AddLine()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, field := range fields {
 		if field.isNull {
 			err = line.AppendNull()
 			if err != nil {
-				return err
+				return line, err
 			}
 			continue
 		}
 		err = line.Append(field.val)
 		if err != nil {
-			return err
+			return line, err
 		}
 	}
-	return nil
+	return line, nil
 }
 
 func (doc *document) AddLine() (DocumentLine, error) {
