@@ -72,9 +72,10 @@ func (line *documentLine) Append(val string) error {
 	field := internal.RecordField{
 		Value: val,
 	}
-	if line.doc.HasHeaders() && line.line == 1 {
+	if line.doc.HasHeaders() && (line.doc.headerLine == 0 || line.line == line.doc.headerLine) {
 		field.IsHeader = true
 		field.FieldName = val
+		line.doc.headerLine = line.line
 	}
 	fieldInd := len(line.fields)
 	err := line.checkFieldIndex(fieldInd)
@@ -82,14 +83,14 @@ func (line *documentLine) Append(val string) error {
 		return ErrFieldCount
 	}
 
-	if line.line > 1 && len(line.doc.Headers())-1 > fieldInd {
+	if line.line > line.doc.headerLine && len(line.doc.Headers())-1 > fieldInd {
 		field.FieldName = line.doc.Headers()[fieldInd]
 	}
 	field.FieldIndex = fieldInd
 	line.fields = append(line.fields, field)
 	fw := field.CalculateFieldLength()
 	line.doc.SetMaxColumnWidth(fieldInd, fw)
-	if line.doc.HasHeaders() && line.line == 1 {
+	if line.doc.HasHeaders() && line.line == line.doc.headerLine {
 		line.doc.AppendHeader(val)
 	}
 	// increment the field count for the line
@@ -99,9 +100,10 @@ func (line *documentLine) Append(val string) error {
 
 func (line *documentLine) AppendNull() error {
 	field := internal.RecordField{IsNull: true}
-	if line.doc.HasHeaders() && line.line == 1 {
+	if line.doc.HasHeaders() && (line.doc.headerLine == 0 || line.line == line.doc.headerLine) {
 		field.IsHeader = true
 		field.FieldName = "-"
+		line.doc.headerLine = line.line
 	}
 	fieldInd := len(line.fields)
 	err := line.checkFieldIndex(fieldInd)
@@ -109,14 +111,14 @@ func (line *documentLine) AppendNull() error {
 		return ErrFieldCount
 	}
 
-	if line.line > 1 && len(line.doc.Headers())-1 > fieldInd {
+	if line.line > line.doc.headerLine && len(line.doc.Headers())-1 > fieldInd {
 		field.FieldName = line.doc.Headers()[fieldInd]
 	}
 	field.FieldIndex = fieldInd
 	line.fields = append(line.fields, field)
 	fw := field.CalculateFieldLength()
 	line.doc.SetMaxColumnWidth(fieldInd, fw)
-	if line.doc.HasHeaders() && line.line == 1 {
+	if line.doc.HasHeaders() && line.line == line.doc.headerLine {
 		line.doc.AppendHeader("-")
 	}
 	// increment the field count for the line
@@ -165,7 +167,7 @@ func (line *documentLine) Comment() string {
 
 // check field index is valid, returns the number of fields left, -1 is returned when document is not tabular or is the first line
 func (line *documentLine) checkFieldIndex(fieldInd int) error {
-	if !line.doc.Tabular() || line.line <= 1 {
+	if !line.doc.Tabular() || line.line == line.doc.headerLine {
 		// if the document is not tabular or this is the first line this check won't be in effect
 		return nil
 	}
@@ -173,9 +175,12 @@ func (line *documentLine) checkFieldIndex(fieldInd int) error {
 		// unexpected
 		return ErrNotEnoughLines
 	}
-	line1, _ := line.doc.Line(1)
+	headerLine, err := line.doc.Line(line.doc.headerLine)
+	if err != nil {
+		return ErrLineNotFound
+	}
 
-	fc := line1.FieldCount() - fieldInd
+	fc := headerLine.FieldCount() - fieldInd
 
 	if fc <= 0 {
 		return &WriteError{err: ErrFieldCount, line: line.line, fieldIndex: fieldInd}

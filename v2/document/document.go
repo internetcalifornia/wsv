@@ -104,6 +104,7 @@ type document struct {
 	currentField     int
 	startedWriting   bool
 	headers          []string
+	headerLine       int
 	hasHeaders       bool
 }
 
@@ -193,7 +194,7 @@ func (doc *document) Write() ([]byte, error) {
 	}
 
 	line := doc.lines[doc.currentWriteLine]
-	if doc.HasHeaders() && !doc.emitHeaders && doc.currentWriteLine == 0 {
+	if doc.HasHeaders() && !doc.emitHeaders && doc.currentWriteLine == doc.headerLine {
 		return buf, ErrOmitHeaders
 	}
 	// if configured to be tabular, not an empty line, and has too little/many fields compared to headers return an error
@@ -366,6 +367,7 @@ func NewDocument() Document {
 		currentWriteLine: 0,
 		currentField:     0,
 		maxColumnWidth:   make(map[int]int, 0),
+		headerLine:       0,
 		startedWriting:   false,
 		// The runes in between data values
 		padding:    []rune{' ', ' '},

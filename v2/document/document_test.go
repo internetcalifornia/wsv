@@ -1,8 +1,10 @@
 package document
 
 import (
+	"fmt"
 	"io"
 	"testing"
+	"time"
 )
 
 func TestCreateTabularDocument(t *testing.T) {
@@ -21,6 +23,7 @@ func TestCreateTabularDocument(t *testing.T) {
 	line.Append("Age")
 	line.Append("Favorite Color")
 	line.Append("Preferred \"Nickname\" Name")
+	fmt.Printf("%+v\n", line)
 	_, err = line.Validate()
 	if err != nil {
 		t.Error(err)
@@ -169,5 +172,55 @@ func TestCreateTabularDocument(t *testing.T) {
 	exp5 := exp1 + exp2 + exp3 + exp4
 	if string(o) != exp5 {
 		t.Error("expected output to be", []byte(exp5), "but got", o, "instead")
+	}
+}
+
+func TestStartTabularDocumentWithComment(t *testing.T) {
+	doc := NewDocument()
+	ln, _ := doc.AddLine()
+	ln.UpdateComment("this is a test document")
+	_, err := doc.AppendLine(Field("name"), Field("hire date"), Field("salary"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	_, err = doc.AppendLine(Field("scott"), Field(time.DateOnly), Field("$200,000,000"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	b, err := doc.WriteAll()
+	if err != nil {
+		t.Errorf("failed to write the bytes due to %s", err)
+		return
+	}
+	if len(b) <= 0 {
+		t.Error("expected to have greater than 0 bytes")
+	}
+}
+
+func TestStartTabularDocumentBeginningWithEmptyLines(t *testing.T) {
+	doc := NewDocument()
+	doc.AddLine()
+	doc.AddLine()
+	ln, _ := doc.AddLine()
+	ln.UpdateComment("this is a test document")
+	_, err := doc.AppendLine(Field("name"), Field("hire date"), Field("salary"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	_, err = doc.AppendLine(Field("scott"), Field(time.DateOnly), Field("$200,000,000"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	b, err := doc.WriteAll()
+	if err != nil {
+		t.Errorf("failed to write the bytes due to %s", err)
+		return
+	}
+	if len(b) <= 0 {
+		t.Error("expected to have greater than 0 bytes")
 	}
 }
