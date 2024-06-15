@@ -1,4 +1,9 @@
-package internal
+package utils
+
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	CharCharacterTabulation     = 0x0009
@@ -85,4 +90,14 @@ func IsLiteralEmptyString(b []*byte) bool {
 	}
 
 	return true
+}
+
+func GetIndexOfSlice[T any](s []T, i int) (*T, error) {
+	if i < 0 {
+		return nil, errors.New("index must be be 0 or greater")
+	}
+	if i > len(s)-1 {
+		return nil, fmt.Errorf("index %d is greater than %d", i, len(s)-1)
+	}
+	return &s[i], nil
 }

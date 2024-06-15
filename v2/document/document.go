@@ -7,7 +7,8 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/internetcalifornia/wsv/v2/internal"
+	"github.com/internetcalifornia/wsv/v2/record"
+	"github.com/internetcalifornia/wsv/v2/utils"
 )
 
 type WriteError struct {
@@ -110,7 +111,7 @@ type document struct {
 
 func (doc *document) SetPadding(rs []rune) error {
 	for _, r := range rs {
-		if !internal.IsFieldDelimiter(r) {
+		if !utils.IsFieldDelimiter(r) {
 			return &WriteError{err: ErrInvalidPaddingRune}
 		}
 	}
@@ -159,7 +160,7 @@ func (doc *document) AddLine() (DocumentLine, error) {
 	pln := len(doc.lines)
 	line := documentLine{
 		doc:    doc,
-		fields: make([]internal.RecordField, 0),
+		fields: make([]record.RecordField, 0),
 		line:   pln + 1,
 	}
 
@@ -224,13 +225,13 @@ func (doc *document) Write() ([]byte, error) {
 		if i == 0 {
 			buf = append(buf, []byte(v)...)
 		} else {
-			buf = append(buf, internal.RuneToBytes(doc.padding)...)
+			buf = append(buf, utils.RuneToBytes(doc.padding)...)
 			buf = append(buf, []byte(v)...)
 		}
 	}
 	if len(line.Comment()) > 0 {
 		if len(buf) > 0 {
-			buf = append(buf, internal.RuneToBytes(doc.padding)...)
+			buf = append(buf, utils.RuneToBytes(doc.padding)...)
 			buf = append(buf, []byte(fmt.Sprintf("#%s", line.Comment()))...)
 		} else {
 			buf = append(buf, []byte(fmt.Sprintf("#%s", line.Comment()))...)

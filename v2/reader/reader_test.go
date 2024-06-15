@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	doc "github.com/internetcalifornia/wsv/v2/document"
-	"github.com/internetcalifornia/wsv/v2/internal"
 	"github.com/internetcalifornia/wsv/v2/reader"
+	"github.com/internetcalifornia/wsv/v2/utils"
 )
 
 func TestQuotedValuesLine(t *testing.T) {
@@ -73,19 +73,19 @@ func TestIsEmptyStringLiteral(t *testing.T) {
 	}
 	t5_p = append(t5_p, nil)
 
-	if !internal.IsLiteralEmptyString(t1_p) {
+	if !utils.IsLiteralEmptyString(t1_p) {
 		t.Error("failed test 1")
 	}
-	if !internal.IsLiteralEmptyString(t2_p) {
+	if !utils.IsLiteralEmptyString(t2_p) {
 		t.Error("failed test 2")
 	}
-	if !internal.IsLiteralEmptyString(t3_p) {
+	if !utils.IsLiteralEmptyString(t3_p) {
 		t.Error("failed test 3")
 	}
-	if !internal.IsLiteralEmptyString(t4_p) {
+	if !utils.IsLiteralEmptyString(t4_p) {
 		t.Error("failed test 4")
 	}
-	if !internal.IsLiteralEmptyString(t5_p) {
+	if !utils.IsLiteralEmptyString(t5_p) {
 		t.Error("failed test 5")
 	}
 }

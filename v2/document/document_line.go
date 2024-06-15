@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/internetcalifornia/wsv/v2/internal"
+	"github.com/internetcalifornia/wsv/v2/record"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 
 type documentLine struct {
 	doc          *document
-	fields       []internal.RecordField
+	fields       []record.RecordField
 	comment      string
 	currentField int
 	// Lines are 1-indexed
@@ -32,9 +32,9 @@ type DocumentLine interface {
 	// Append a null value to the end of the line
 	AppendNull() error
 	// Get the next field value, or error if at the end of the line for data
-	NextField() (*internal.RecordField, error)
+	NextField() (*record.RecordField, error)
 	// Record at index, or Field Not found, field 0-indexed
-	Field(fieldIndex int) (*internal.RecordField, error)
+	Field(fieldIndex int) (*record.RecordField, error)
 	// A count of the number of data fields in the line
 	FieldCount() int
 	// Get the line number
@@ -69,7 +69,7 @@ func (line *documentLine) Validate() (bool, error) {
 }
 
 func (line *documentLine) Append(val string) error {
-	field := internal.RecordField{
+	field := record.RecordField{
 		Value: val,
 	}
 	if line.doc.HasHeaders() && (line.doc.headerLine == 0 || line.line == line.doc.headerLine) {
@@ -99,7 +99,7 @@ func (line *documentLine) Append(val string) error {
 }
 
 func (line *documentLine) AppendNull() error {
-	field := internal.RecordField{IsNull: true}
+	field := record.RecordField{IsNull: true}
 	if line.doc.HasHeaders() && (line.doc.headerLine == 0 || line.line == line.doc.headerLine) {
 		field.IsHeader = true
 		field.FieldName = "-"
@@ -126,7 +126,7 @@ func (line *documentLine) AppendNull() error {
 	return nil
 }
 
-func (line *documentLine) NextField() (*internal.RecordField, error) {
+func (line *documentLine) NextField() (*record.RecordField, error) {
 	if len(line.fields)-1 < line.currentField {
 		return nil, ErrFieldNotFound
 	}
@@ -198,7 +198,7 @@ func (line *documentLine) UpdateFieldName(fi int, val string) error {
 	return nil
 }
 
-func (line *documentLine) Field(fieldIndex int) (*internal.RecordField, error) {
+func (line *documentLine) Field(fieldIndex int) (*record.RecordField, error) {
 	if len(line.fields)-1 < fieldIndex {
 		return nil, ErrFieldNotFound
 	}

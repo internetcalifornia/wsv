@@ -1,9 +1,11 @@
-package internal
+package record
 
 import (
 	"fmt"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/internetcalifornia/wsv/v2/utils"
 )
 
 type RecordField struct {
@@ -41,7 +43,7 @@ func (f *RecordField) SerializeText() string {
 		wrapped = true
 		v = fmt.Sprintf(`"%s"`, v)
 	}
-	if strings.ContainsFunc(v, IsFieldDelimiter) && !wrapped {
+	if strings.ContainsFunc(v, utils.IsFieldDelimiter) && !wrapped {
 		wrapped = true
 		v = fmt.Sprintf(`"%s"`, v)
 	}

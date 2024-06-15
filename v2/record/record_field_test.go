@@ -1,13 +1,13 @@
-package internal_test
+package record_test
 
 import (
 	"testing"
 
-	"github.com/internetcalifornia/wsv/v2/internal"
+	"github.com/internetcalifornia/wsv/v2/record"
 )
 
 func TestSerializeText(t *testing.T) {
-	rec1 := internal.RecordField{
+	rec1 := record.RecordField{
 		Value: "Japan is a volcanic archipelago with over 100 active volcanoes.\nThe currency is the yen and the symbol is ¥.",
 	}
 	exp1 := `"Japan is a volcanic archipelago with over 100 active volcanoes."/"The currency is the yen and the symbol is ¥."`
@@ -20,7 +20,7 @@ func TestSerializeText(t *testing.T) {
 		t.Error(cal1)
 	}
 
-	rec2 := internal.RecordField{
+	rec2 := record.RecordField{
 		Value: "Would you've guessed that vodka or gin tops the list? For years, Jinro Soju has been the world's best-selling alcohol! It might not be surprising, given that with 11.2 shots on average, Koreans are also the world's biggest consumer of hard liquor. Haven't been able to try it yet? Time to visit Korea!",
 	}
 	exp2 := `"Would you've guessed that vodka or gin tops the list? For years, Jinro Soju has been the world's best-selling alcohol! It might not be surprising, given that with 11.2 shots on average, Koreans are also the world's biggest consumer of hard liquor. Haven't been able to try it yet? Time to visit Korea!"`
@@ -28,5 +28,4 @@ func TestSerializeText(t *testing.T) {
 	if out2 != exp2 {
 		t.Errorf("expect\n%s\nbut got\n%s\ninstead", exp2, out2)
 	}
-
 }

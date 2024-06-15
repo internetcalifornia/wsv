@@ -13,7 +13,8 @@ import (
 	"unicode/utf8"
 
 	doc "github.com/internetcalifornia/wsv/v2/document"
-	"github.com/internetcalifornia/wsv/v2/internal"
+	"github.com/internetcalifornia/wsv/v2/record"
+	"github.com/internetcalifornia/wsv/v2/utils"
 )
 
 var (
@@ -64,19 +65,8 @@ func (r *Reader) Headers() []string {
 	return r.headers
 }
 
-func getIndexOfSlice[T any](s []T, i int) (*T, error) {
-	if i < 0 {
-		return nil, errors.New("index must be be 0 or greater")
-	}
-	if i > len(s)-1 {
-		message := fmt.Sprintf("index %d is greater than %d", i, len(s)-1)
-		return nil, errors.New(message)
-	}
-	return &s[i], nil
-}
-
 func columnName(headers []string, index int) string {
-	v, err := getIndexOfSlice(headers, index)
+	v, err := utils.GetIndexOfSlice(headers, index)
 	if err != nil {
 		return ""
 	}
@@ -96,7 +86,7 @@ func NewReader(r io.Reader) *Reader {
 
 // Return the column name at the index i, will return "" if not found
 func (r *Reader) ColumnNameOf(i int) (*string, error) {
-	return getIndexOfSlice(r.headers, i)
+	return utils.GetIndexOfSlice(r.headers, i)
 }
 
 // Return the index of a column name
@@ -213,32 +203,32 @@ lineLoop:
 				continue
 			}
 
-			if (b2 == nil || internal.IsFieldDelimiter(rune(*b2))) && !doubleQuoted {
+			if (b2 == nil || utils.IsFieldDelimiter(rune(*b2))) && !doubleQuoted {
 				doubleQuoted = true
 				startDoubleQuote = i
 				continue
 			}
 
-			if (b3 == nil || internal.IsFieldDelimiter(rune(*b3))) && b2 != nil && rune(*b2) == '"' && (len(line)-1 == i || (len(line)-1 > i && internal.IsFieldDelimiter(nextRune(line[i+1:])))) {
+			if (b3 == nil || utils.IsFieldDelimiter(rune(*b3))) && b2 != nil && rune(*b2) == '"' && (len(line)-1 == i || (len(line)-1 > i && utils.IsFieldDelimiter(nextRune(line[i+1:])))) {
 				data = []byte{}
 				str = append(str, LineField{IsComment: false, Value: string(data), IsNull: isNull})
 				doubleQuoted = false
 				continue
 			}
 
-			if b2 != nil && rune(*b2) == '"' && (b3 == nil || rune(*b3) != '"') && !(len(line)-1 > i+1 && internal.IsFieldDelimiter(nextRune(line[i+1:])) && b3 != nil && rune(*b3) == '/') && !(len(line)-1 > i+2 && nextRune(line[i+1:]) == '/' && nextRune(line[i+2:]) == '"') {
+			if b2 != nil && rune(*b2) == '"' && (b3 == nil || rune(*b3) != '"') && !(len(line)-1 > i+1 && utils.IsFieldDelimiter(nextRune(line[i+1:])) && b3 != nil && rune(*b3) == '/') && !(len(line)-1 > i+2 && nextRune(line[i+1:]) == '/' && nextRune(line[i+2:]) == '"') {
 				data = append(data, byte('"'))
 				escapedDoubleQuote = i
 				continue
 			}
 
-			if doubleQuoted && (len(line)-1 == i || (len(line)-1 > i && internal.IsFieldDelimiter(nextRune(line[i+1:])))) && (b2 == nil || rune(*b2) != '"' || i > escapedDoubleQuote) {
+			if doubleQuoted && (len(line)-1 == i || (len(line)-1 > i && utils.IsFieldDelimiter(nextRune(line[i+1:])))) && (b2 == nil || rune(*b2) != '"' || i > escapedDoubleQuote) {
 				doubleQuoted = false
 
 			}
 
 		case '-':
-			if r == '-' && (b2 == nil || internal.IsFieldDelimiter(rune(*b2))) && !doubleQuoted {
+			if r == '-' && (b2 == nil || utils.IsFieldDelimiter(rune(*b2))) && !doubleQuoted {
 				isNull = true
 			}
 			fallthrough
@@ -252,9 +242,9 @@ lineLoop:
 				break lineLoop
 			}
 			// currently flagged as null but has more characters left to parse and
-			if isNull && len(line)-1 > i && bytes.IndexFunc(line[i:], internal.IsFieldDelimiter) != 1 {
+			if isNull && len(line)-1 > i && bytes.IndexFunc(line[i:], utils.IsFieldDelimiter) != 1 {
 				// the next immediate character is a white space
-				if b2 != nil && rune(*b2) == '-' && bytes.IndexFunc([]byte{*b1}, internal.IsFieldDelimiter) == 0 {
+				if b2 != nil && rune(*b2) == '-' && bytes.IndexFunc([]byte{*b1}, utils.IsFieldDelimiter) == 0 {
 					data = []byte{}
 				} else {
 					// and is not surround by double quotes we have an invalid
@@ -263,7 +253,7 @@ lineLoop:
 
 			}
 
-			isDelim := internal.IsFieldDelimiter(r)
+			isDelim := utils.IsFieldDelimiter(r)
 			if isDelim && (!doubleQuoted) {
 				if len(data) == 0 && !isNull {
 					continue
@@ -349,7 +339,7 @@ func (r *Reader) Read() (ReaderLine, error) {
 	var data []byte
 	var errRead error
 	line := readerLine{
-		fields:     make([]internal.RecordField, 0),
+		fields:     make([]record.RecordField, 0),
 		fieldCount: 0,
 	}
 	if r.ended {
@@ -375,7 +365,7 @@ func (r *Reader) Read() (ReaderLine, error) {
 	for i, field := range fields {
 		if r.numLine == r.firstDataRow && r.IncludesHeader && !field.IsComment {
 			r.headers = append(r.headers, field.Value)
-			d := internal.RecordField{Value: field.Value}
+			d := record.RecordField{Value: field.Value}
 			if field.IsNull {
 				d.IsNull = true
 			}
@@ -400,7 +390,7 @@ func (r *Reader) Read() (ReaderLine, error) {
 			return &line, &ParseError{Line: r.numLine, Column: 0, Err: ErrFieldCount}
 		}
 		fieldName := columnName(r.headers, i)
-		d := internal.RecordField{Value: field.Value, FieldName: fieldName, IsHeader: false, RowIndex: r.numLine, FieldIndex: i, IsNull: false}
+		d := record.RecordField{Value: field.Value, FieldName: fieldName, IsHeader: false, RowIndex: r.numLine, FieldIndex: i, IsNull: false}
 		if field.IsNull {
 			d.IsNull = true
 			d.Value = ""
@@ -422,7 +412,7 @@ func (r *Reader) Read() (ReaderLine, error) {
 		for i := range x {
 			h := o + i
 			cname := columnName(r.headers, h)
-			rec := internal.RecordField{IsNull: true, Value: "", FieldIndex: h, RowIndex: r.numLine, FieldName: cname, IsHeader: false}
+			rec := record.RecordField{IsNull: true, Value: "", FieldIndex: h, RowIndex: r.numLine, FieldName: cname, IsHeader: false}
 			line.fields = append(line.fields, rec)
 			line.fieldCount++
 		}
@@ -438,11 +428,11 @@ func nextRune(b []byte) rune {
 }
 
 func (r *Reader) readLine() ([]byte, error) {
-	line, err := r.r.ReadSlice(internal.CharLineFeed)
+	line, err := r.r.ReadSlice(utils.CharLineFeed)
 	if err == bufio.ErrBufferFull {
 		r.rawBuffer = append(r.rawBuffer[:0], line...)
 		for err == bufio.ErrBufferFull {
-			line, err = r.r.ReadSlice(internal.CharLineFeed)
+			line, err = r.r.ReadSlice(utils.CharLineFeed)
 			r.rawBuffer = append(r.rawBuffer, line...)
 		}
 		line = r.rawBuffer
@@ -451,14 +441,14 @@ func (r *Reader) readLine() ([]byte, error) {
 	if readSize > 0 && err == io.EOF {
 		err = nil
 		// For backwards compatibility, drop trailing \r before EOF.
-		if line[readSize-1] == internal.CharCarriageReturn {
+		if line[readSize-1] == utils.CharCarriageReturn {
 			line = line[:readSize-1]
 		}
 	}
 	r.numLine++
 	r.offset += int64(readSize)
-	if n := len(line); n >= 2 && line[n-2] == internal.CharCarriageReturn && line[n-1] == internal.CharLineFeed {
-		line[n-2] = internal.CharLineFeed
+	if n := len(line); n >= 2 && line[n-2] == utils.CharCarriageReturn && line[n-1] == utils.CharLineFeed {
+		line[n-2] = utils.CharLineFeed
 		line = line[:n-1]
 	}
 	// trim the trailing new line
