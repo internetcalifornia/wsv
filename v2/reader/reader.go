@@ -46,12 +46,11 @@ func (e *ParseError) Error() string {
 // These are the errors that can be returned in ParseError.Err.
 
 type Reader struct {
-	numLine         int
-	offset          int64
-	rawBuffer       []byte
-	FieldsPerRecord int
-	lines           []ReaderLine
-
+	numLine             int
+	offset              int64
+	rawBuffer           []byte
+	FieldsPerRecord     int
+	lines               []ReaderLine
 	headers             []string
 	IncludesHeader      bool
 	IsTabular           bool
@@ -456,14 +455,17 @@ func (r *Reader) readLine() ([]byte, error) {
 	return line, err
 }
 
-func (r *Reader) ToDocument() (doc.Document, error) {
+func (r *Reader) ToDocument() (*doc.Document, error) {
 	doc := doc.NewDocument()
 	var err error
 	var rl ReaderLine
 	for {
 		rl, err = r.Read()
-		if err != nil {
+		if err == io.EOF {
 			break
+		}
+		if err != nil {
+			return doc, err
 		}
 		line, err := doc.AddLine()
 		if err != nil {
@@ -475,9 +477,5 @@ func (r *Reader) ToDocument() (doc.Document, error) {
 		}
 	}
 
-	if err == io.EOF || err == nil {
-
-		return doc, nil
-	}
-	return nil, err
+	return doc, nil
 }

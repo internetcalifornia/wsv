@@ -2708,7 +2708,7 @@ func TestReaderToDocument(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	file, err = os.Create(fmt.Sprintf("%s/example-output/complex-output.wsv", dir))
+	file, err = os.Create(fmt.Sprintf("%s/examples/complex-output.wsv", dir))
 	if err != nil {
 		t.Error(err)
 		return
@@ -2737,7 +2737,7 @@ func TestWriteComplexLine(t *testing.T) {
 		return
 	}
 	doc := doc.NewDocument()
-	doc.SetTabularStyle(true)
+	doc.Tabular = true
 	doc.SetPadding([]rune{' ', ' '})
 	for n, line := range lines {
 
