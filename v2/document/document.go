@@ -141,9 +141,9 @@ func (doc *Document) WriteLine(n int, includeHeader bool) ([]byte, error) {
 	if err != nil && includeHeader {
 		return buf, err
 	}
-	fmt.Printf("Headers %d %+v\n", doc.headerLine, headers)
+
 	line := doc.lines[n-1]
-	fmt.Printf("Line %+v\n", line)
+
 	headerLine := make([]string, line.FieldCount())
 	dataLine := make([]string, line.FieldCount())
 	for i, field := range line.fields {
