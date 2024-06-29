@@ -12,7 +12,7 @@ var (
 )
 
 type documentLine struct {
-	doc          *document
+	doc          *Document
 	fields       []record.RecordField
 	comment      string
 	currentField int
@@ -52,7 +52,7 @@ type DocumentLine interface {
 }
 
 func (line *documentLine) Validate() (bool, error) {
-	if !line.doc.Tabular() {
+	if !line.doc.Tabular {
 		return true, nil
 	}
 	if line.doc.HasHeaders() && len(line.doc.Headers()) != line.fieldCount {
@@ -167,7 +167,7 @@ func (line *documentLine) Comment() string {
 
 // check field index is valid, returns the number of fields left, -1 is returned when document is not tabular or is the first line
 func (line *documentLine) checkFieldIndex(fieldInd int) error {
-	if !line.doc.Tabular() || line.line == line.doc.headerLine {
+	if !line.doc.Tabular || line.line == line.doc.headerLine {
 		// if the document is not tabular or this is the first line this check won't be in effect
 		return nil
 	}

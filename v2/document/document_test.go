@@ -3,6 +3,7 @@ package document
 import (
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 	"time"
 )
@@ -223,4 +224,127 @@ func TestStartTabularDocumentBeginningWithEmptyLines(t *testing.T) {
 	if len(b) <= 0 {
 		t.Error("expected to have greater than 0 bytes")
 	}
+}
+
+func TestWriteLineWithHeader(t *testing.T) {
+	doc := NewDocument()
+	doc.AddLine()
+	doc.AddLine()
+	ln, _ := doc.AddLine()
+	ln.UpdateComment("this is a test document")
+	_, err := doc.AppendLine(Field("name"), Field("hire date"), Field("salary"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	_, err = doc.AppendLine(Field("scott"), Field(time.DateOnly), Field("$200,000,000"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	b, err := doc.WriteLine(5, true)
+	if err != nil {
+		t.Errorf("failed to write the bytes due to %s", err)
+		return
+	}
+
+	exp := `name   "hire date"   salary` + "\n" +
+		`scott  "2006-01-02"  $200,000,000`
+
+	if exp != string(b) {
+		t.Errorf("expected [%s] but got [%s]", strings.ReplaceAll(exp, "\n", `\n`), strings.ReplaceAll(string(b), "\n", `\n`))
+	}
+}
+
+func TestWriteLineWithoutHeader(t *testing.T) {
+	doc := NewDocument()
+	doc.AddLine()
+	doc.AddLine()
+	ln, _ := doc.AddLine()
+	ln.UpdateComment("this is a test document")
+	_, err := doc.AppendLine(Field("name"), Field("hire date"), Field("salary"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	_, err = doc.AppendLine(Field("scott"), Field(time.DateOnly), Field("$200,000,000"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	b, err := doc.WriteLine(5, false)
+	if err != nil {
+		t.Errorf("failed to write the bytes due to %s", err)
+		return
+	}
+
+	exp := `scott  "2006-01-02"  $200,000,000`
+
+	if exp != string(b) {
+		t.Errorf("expected [%s] but got [%s]", strings.ReplaceAll(exp, "\n", `\n`), strings.ReplaceAll(string(b), "\n", `\n`))
+	}
+}
+
+func TestWriteLineWithoutHeaderWhereHeaderValuesWouldPadValue(t *testing.T) {
+	doc := NewDocument()
+	doc.AddLine()
+	doc.AddLine()
+	ln, _ := doc.AddLine()
+	ln.UpdateComment("this is a test document")
+	_, err := doc.AppendLine(Field("name of the person"), Field("hire date in the system"), Field("salary of the employee hired recently"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	_, err = doc.AppendLine(Field("scott"), Field(time.DateOnly), Field("$200,000,000"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	b, err := doc.WriteLine(5, false)
+	if err != nil {
+		t.Errorf("failed to write the bytes due to %s", err)
+		return
+	}
+
+	exp := `scott  "2006-01-02"  $200,000,000`
+
+	if exp != string(b) {
+		t.Errorf("expected [%s] but got [%s]", strings.ReplaceAll(exp, "\n", `\n`), strings.ReplaceAll(string(b), "\n", `\n`))
+	}
+}
+
+func TestWriteLineWithHeaderWhereHeaderValuesWouldPadValue(t *testing.T) {
+	doc := NewDocument()
+	doc.AddLine()
+	doc.AddLine()
+	ln, _ := doc.AddLine()
+	ln.UpdateComment("this is a test document")
+	_, err := doc.AppendLine(Field("name of the person"), Field("hire date in the system"), Field("salary of the employee hired recently"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	_, err = doc.AppendLine(Field("scott"), Field(time.DateOnly), Field("$200,000,000"))
+	if err != nil {
+		t.Errorf("failed to write the header line after a document due to %s", err)
+		return
+	}
+	b, err := doc.WriteLine(5, true)
+	if err != nil {
+		t.Errorf("failed to write the bytes due to %s", err)
+		return
+	}
+
+	exp := `"name of the person"  "hire date in the system"  "salary of the employee hired recently"` + "\n" +
+		`scott                 "2006-01-02"               $200,000,000`
+
+	if exp != string(b) {
+		t.Errorf("expected [%s] but got [%s]", strings.ReplaceAll(exp, "\n", `\n`), strings.ReplaceAll(string(b), "\n", `\n`))
+	}
+}
+
+func TestNonTabularDocument(t *testing.T) {
+	doc := NewDocument()
+	doc.Tabular = true
 }
