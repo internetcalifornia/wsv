@@ -12,6 +12,10 @@ import (
 	"github.com/internetcalifornia/wsv/v2/utils"
 )
 
+func toPointer[t any](a t) *t {
+	return &a
+}
+
 func TestQuotedValuesLine(t *testing.T) {
 	line := `"Given Name" "Family Name" "Date of Birth" "Favorite Color"`
 	r, err := reader.ParseLine(1, []byte(line))
@@ -34,10 +38,6 @@ func TestQuotedValuesLine(t *testing.T) {
 	if r[3].IsNull || r[3].Value != "Favorite Color" {
 		t.Errorf(`expected field 3 to be Favorite Color but got %+v\n`, r[2])
 	}
-}
-
-func toPointer[t any](a t) *t {
-	return &a
 }
 
 func TestIsEmptyStringLiteral(t *testing.T) {
@@ -2708,7 +2708,7 @@ func TestReaderToDocument(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	file, err = os.Create(fmt.Sprintf("%s/examples/complex-output.wsv", dir))
+	file, err = os.Create(fmt.Sprintf("%s/example-output/complex-output.wsv", dir))
 	if err != nil {
 		t.Error(err)
 		return

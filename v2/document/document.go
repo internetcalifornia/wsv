@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -21,12 +22,14 @@ type WriteError struct {
 }
 
 var (
-	ErrFieldNotFound      = errors.New("field does not exist")
-	ErrStartedToWrite     = errors.New("document started to write, need to reset document to edit")
-	ErrInvalidPaddingRune = errors.New("only whitespace characters can be used for padding")
-	ErrOmitHeaders        = errors.New("document configured to omit headers")
-	ErrLineNotFound       = errors.New("line does not exist")
-	ErrFieldCount         = errors.New("wrong number of fields")
+	ErrFieldIndexedNotFound         = errors.New("field does not exist")
+	ErrStartedToWrite               = errors.New("document started to write, need to reset document to edit")
+	ErrInvalidPaddingRune           = errors.New("only whitespace characters can be used for padding")
+	ErrOmitHeaders                  = errors.New("document configured to omit headers")
+	ErrLineNotFound                 = errors.New("line does not exist")
+	ErrFieldCount                   = errors.New("wrong number of fields")
+	ErrCannotSortNonTabularDocument = errors.New("the document is non-tabular and cannot be sorted")
+	ErrFieldNotFoundForSortBy       = errors.New("the field was not found")
 )
 
 func (e *WriteError) Error() string {
@@ -35,7 +38,7 @@ func (e *WriteError) Error() string {
 		return fmt.Sprintf("the writer already started and has currently written up until line %d, reset the writer to continue editing the document.", e.line)
 	}
 
-	if e.err == ErrFieldNotFound {
+	if e.err == ErrFieldIndexedNotFound {
 		return fmt.Sprintf("field %d, %s for line %d", e.fieldIndex, e.err.Error(), e.line)
 	}
 
@@ -45,7 +48,7 @@ func (e *WriteError) Error() string {
 type Document struct {
 	Tabular          bool
 	EmitHeaders      bool
-	lines            []*documentLine
+	lines            []DocumentLine
 	maxColumnWidth   map[int]int
 	padding          []rune
 	currentWriteLine int
@@ -71,12 +74,41 @@ type appendLineField struct {
 	isNull bool
 }
 
+func (d *Document) Lines() []DocumentLine {
+	return d.lines
+}
+
 func Field(val string) appendLineField {
 	return appendLineField{val, false}
 }
 
 func Null() appendLineField {
 	return appendLineField{"", true}
+}
+
+// Adds a line to a document and then appends values to the line added
+//
+// the literally "-" will be interpreded as null,  if you need a literal "-" use the `line.Append(val string)` function
+//
+// returns the line that was added, can return an error due validation errors
+func (doc *Document) AppendValues(vals ...string) (DocumentLine, error) {
+	line, err := doc.AddLine()
+	if err != nil {
+		return nil, err
+	}
+	for _, val := range vals {
+		if val == "-" {
+			err := line.AppendNull()
+			if err != nil {
+				return line, err
+			}
+		}
+		err := line.Append(val)
+		if err != nil {
+			return line, err
+		}
+	}
+	return line, nil
 }
 
 func (doc *Document) AppendLine(fields ...appendLineField) (DocumentLine, error) {
@@ -116,6 +148,34 @@ func (doc *Document) AddLine() (DocumentLine, error) {
 	return &line, nil
 }
 
+// evaluates previous and current record fields and should return true if current field is after previous field
+type SortFunc = func(prv *record.RecordField, curr *record.RecordField) bool
+
+type SortOption struct {
+	// name of the field in the
+	FieldName string
+	Desc      bool
+}
+
+// Sorts the documents lines in place based on the sort options
+//
+// Will sort until finished or a field specified is not found, in which case a ErrFieldNotFoundForSortBy is returned
+func (doc *Document) SortBy(sortOptions ...SortOption) error {
+	if !doc.Tabular {
+		return ErrCannotSortNonTabularDocument
+	}
+
+	for _, sort := range sortOptions {
+		fmt.Println("sorting by", "field", sort.FieldName)
+		slices.SortFunc(doc.lines, func(a DocumentLine, b DocumentLine) int {
+			return a.Compare(sort.FieldName, b, sort.Desc)
+		})
+
+	}
+	doc.ReIndexLineNumbers()
+	return nil
+}
+
 // Returns the document at the ln specified. Lines are 1-index. If the line does not exist there is an
 // ErrLineNotFound error
 func (doc *Document) Line(ln int) (DocumentLine, error) {
@@ -146,7 +206,7 @@ func (doc *Document) WriteLine(n int, includeHeader bool) ([]byte, error) {
 
 	headerLine := make([]string, line.FieldCount())
 	dataLine := make([]string, line.FieldCount())
-	for i, field := range line.fields {
+	for i, field := range line.Fields() {
 		var header = ""
 		if headers != nil {
 			headerField, err := headers.Field(i)
@@ -157,7 +217,7 @@ func (doc *Document) WriteLine(n int, includeHeader bool) ([]byte, error) {
 		data := field.SerializeText()
 		dl := utf8.RuneCountInString(data)
 		hl := utf8.RuneCountInString(header)
-		if includeHeader && i < line.fieldCount-1 {
+		if includeHeader && i < line.FieldCount()-1 {
 			if dl >= hl {
 				for range dl - hl {
 					header = header + " "
@@ -193,18 +253,18 @@ func (doc *Document) Write() ([]byte, error) {
 		return buf, ErrOmitHeaders
 	}
 	// if configured to be tabular, not an empty line, and has too little/many fields compared to headers return an error
-	if doc.Tabular && doc.currentWriteLine != 0 && line.fieldCount != 0 && line.fieldCount != len(doc.Headers()) {
-		return buf, &WriteError{line: line.line, headerCount: len(doc.Headers()), fieldIndex: line.fieldCount, err: ErrFieldCount}
+	if doc.Tabular && doc.currentWriteLine != 0 && line.FieldCount() != 0 && line.FieldCount() != len(doc.Headers()) {
+		return buf, &WriteError{line: line.LineNumber(), headerCount: len(doc.Headers()), fieldIndex: line.FieldCount(), err: ErrFieldCount}
 	}
 
-	for i, field := range line.fields {
+	for i, field := range line.Fields() {
 		mw, err := doc.MaxColumnWidth(i)
 		if err != nil {
 			continue
 		}
 		v := field.SerializeText()
 		p := utf8.RuneCountInString(v)
-		if doc.Tabular && (len(line.fields)-1 != i) {
+		if doc.Tabular && (len(line.Fields())-1 != i) {
 			for {
 				// pad value with single spaces unless it's the last column or line has a comment
 				if p < mw {
@@ -277,7 +337,7 @@ func (doc *Document) CalculateMaxFieldLengths() {
 		if line == nil {
 			continue
 		}
-		for fieldInd, field := range line.fields {
+		for fieldInd, field := range line.Fields() {
 			fw := field.CalculateFieldLength()
 			doc.SetMaxColumnWidth(fieldInd, fw)
 		}
@@ -302,7 +362,7 @@ func (doc *Document) SetMaxColumnWidth(col int, len int) {
 func (doc *Document) MaxColumnWidth(col int) (int, error) {
 	v, ok := doc.maxColumnWidth[col]
 	if !ok {
-		return 0, ErrFieldNotFound
+		return 0, ErrFieldIndexedNotFound
 	}
 	return v, nil
 }
@@ -342,11 +402,25 @@ func (doc *Document) AppendHeader(val string) {
 	doc.headers = append(doc.headers, val)
 }
 
+func Fields(s ...string) []appendLineField {
+	fields := make([]appendLineField, len(s))
+	for i, v := range s {
+		fields[i] = Field(v)
+	}
+	return fields
+}
+
+func (doc *Document) ReIndexLineNumbers() {
+	for i, line := range doc.lines {
+		line.ReIndexLineNumber(i + 1)
+	}
+}
+
 func NewDocument() *Document {
 	doc := Document{
 		Tabular:          true,
 		EmitHeaders:      true,
-		lines:            make([]*documentLine, 0),
+		lines:            make([]DocumentLine, 0),
 		currentWriteLine: 0,
 		currentField:     0,
 		maxColumnWidth:   make(map[int]int, 0),

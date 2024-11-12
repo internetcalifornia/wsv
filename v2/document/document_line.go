@@ -3,12 +3,15 @@ package document
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/internetcalifornia/wsv/v2/record"
+	"github.com/internetcalifornia/wsv/v2/utils"
 )
 
 var (
-	ErrNotEnoughLines = errors.New("document does not have more than 1 line")
+	ErrNotEnoughLines    = errors.New("document does not have more than 1 line")
+	ErrFieldNameNotFound = errors.New("field not found")
 )
 
 type documentLine struct {
@@ -29,6 +32,8 @@ type DocumentLine interface {
 	Validate() (bool, error)
 	// Append a value to the end of the line
 	Append(val string) error
+	// Append multiple values at once
+	AppendValues(val ...string) error
 	// Append a null value to the end of the line
 	AppendNull() error
 	// Get the next field value, or error if at the end of the line for data
@@ -49,6 +54,37 @@ type DocumentLine interface {
 	//
 	// ErrFieldNotFound is returned if there is no field at the
 	UpdateFieldName(fieldIndex int, val string) error
+
+	// Select a field record by name
+	FieldByName(fieldName string) (*record.RecordField, error)
+
+	// Cmp compares the line with another line for sorting
+	//
+	// returns
+	//
+	// if:
+	//
+	//	-1 when line[Field].Value < cmpLine[Field].Value or line[Field].Value is nil
+	//	 0 when line[Field].Value == cmpLine[Field].Value
+	//	+1 when line[Field].Value > cmpLine[Field].Value or cmpLine[Field].Value is nil
+	Compare(fieldName string, cmpLine DocumentLine, desc bool) int
+	// fields from the line
+	Fields() []record.RecordField
+	// returns true if this line is a header line
+	IsHeader() bool
+	// re-indexes line numbers back on order in the line slices
+	ReIndexLineNumber(i int)
+}
+
+func (line *documentLine) IsHeader() bool {
+	if line.doc != nil && line.doc.hasHeaders && line.doc.headerLine == line.line {
+		return true
+	}
+	return false
+}
+
+func (line *documentLine) Fields() []record.RecordField {
+	return line.fields
 }
 
 func (line *documentLine) Validate() (bool, error) {
@@ -66,6 +102,16 @@ func (line *documentLine) Validate() (bool, error) {
 		return false, fmt.Errorf("line %d does not have the correct number of fields %d/%d (current/expected)", line.line, line.FieldCount(), line1.FieldCount())
 	}
 	return true, nil
+}
+
+func (line *documentLine) AppendValues(vals ...string) error {
+	for _, val := range vals {
+		err := line.Append(val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (line *documentLine) Append(val string) error {
@@ -126,9 +172,72 @@ func (line *documentLine) AppendNull() error {
 	return nil
 }
 
+// Compare compares the line with another line for sorting
+// returns
+//
+// if:
+//
+//	-1 when line[Field].Value < cmpLine[Field].Value or line[Field].Value is nil
+//	 0 when line[Field].Value == cmpLine[Field].Value
+//	+1 when line[Field].Value > cmpLine[Field].Value or cmpLine[Field].Value is nil
+func (line *documentLine) Compare(fieldName string, cmpLine DocumentLine, desc bool) int {
+	if line.IsHeader() {
+		return -1
+	}
+	if cmpLine.IsHeader() {
+		return 1
+	}
+	a, err := line.FieldByName(fieldName)
+	if err != nil {
+		fmt.Println("error getting field by name, for A")
+		return -1
+	}
+	b, err := cmpLine.FieldByName(fieldName)
+	if err != nil {
+		fmt.Println("error getting field by name, for B")
+		return 1
+	}
+	if aint, err := strconv.ParseInt(a.Value, 10, utils.PtrSize()); err == nil {
+		fmt.Println("converted to int", "A int", aint, a.Value)
+		if bint, err := strconv.ParseInt(b.Value, 10, utils.PtrSize()); err == nil {
+			if aint < bint {
+				if desc {
+					return 1
+				}
+				return -1
+			}
+			if aint > bint {
+				if desc {
+					return -1
+				}
+				return 1
+			}
+			if aint == bint {
+				return 0
+			}
+		}
+		fmt.Println("converted to int but B int failed parsing", err)
+		return 1
+	}
+	if a.Value < b.Value {
+		if desc {
+			return 1
+		}
+		return -1
+	}
+	if a.Value > b.Value {
+		if desc {
+			return -1
+		}
+		return 1
+	}
+
+	return 0
+}
+
 func (line *documentLine) NextField() (*record.RecordField, error) {
 	if len(line.fields)-1 < line.currentField {
-		return nil, ErrFieldNotFound
+		return nil, ErrFieldIndexedNotFound
 	}
 	fieldInd := line.currentField
 	line.currentField++
@@ -140,6 +249,10 @@ func (line *documentLine) FieldCount() int {
 	return line.fieldCount
 }
 
+func (line *documentLine) ReIndexLineNumber(i int) {
+	line.line = i
+}
+
 func (line *documentLine) LineNumber() int {
 	return line.line
 }
@@ -147,7 +260,7 @@ func (line *documentLine) LineNumber() int {
 // Update field at line `fi`, `fi` is 0-index
 func (line *documentLine) UpdateField(fieldInd int, val string) error {
 	if len(line.fields)-1 < fieldInd || fieldInd < 0 {
-		return ErrFieldNotFound
+		return ErrFieldIndexedNotFound
 	}
 	field := line.fields[fieldInd]
 	field.Value = val
@@ -200,7 +313,16 @@ func (line *documentLine) UpdateFieldName(fi int, val string) error {
 
 func (line *documentLine) Field(fieldIndex int) (*record.RecordField, error) {
 	if len(line.fields)-1 < fieldIndex {
-		return nil, ErrFieldNotFound
+		return nil, ErrFieldIndexedNotFound
 	}
 	return &line.fields[fieldIndex], nil
+}
+
+func (line *documentLine) FieldByName(name string) (*record.RecordField, error) {
+	for _, record := range line.fields {
+		if record.FieldName == name {
+			return &record, nil
+		}
+	}
+	return nil, ErrFieldNameNotFound
 }

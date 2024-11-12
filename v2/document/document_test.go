@@ -344,7 +344,36 @@ func TestWriteLineWithHeaderWhereHeaderValuesWouldPadValue(t *testing.T) {
 	}
 }
 
-func TestNonTabularDocument(t *testing.T) {
+func TestSorting(t *testing.T) {
 	doc := NewDocument()
-	doc.Tabular = true
+	doc.AppendLine(Field("Name"), Field("Age"), Field("Gender"))
+	doc.AppendLine(Field("Scott"), Field("18"), Field("Male"))
+	doc.AppendLine(Field("Patrick"), Field("100"), Field("Female"))
+	doc.AppendLine(Field("Zak"), Field("100"), Field("Male"))
+	doc.AppendLine(Field("George"), Field("55"), Field("Male"))
+	doc.AppendLine(Field("Jane"), Field("79"), Field("Female"))
+
+	doc.SortBy([]SortOption{
+		{FieldName: "Name"},
+		{FieldName: "Age", Desc: true},
+	}...)
+
+	expDoc := NewDocument()
+	expDoc.AppendLine(Fields("Name", "Age", "Gender")...)
+	expDoc.AppendLine(Fields("Patrick", "100", "Female")...)
+	expDoc.AppendLine(Fields("Zak", "100", "Male")...)
+	expDoc.AppendLine(Fields("Jane", "79", "Female")...)
+	expDoc.AppendLine(Fields("George", "55", "Male")...)
+	expDoc.AppendLine(Fields("Scott", "18", "Male")...)
+	d, err := doc.WriteAll()
+	if err != nil {
+		t.Error(err)
+	}
+	e, err := expDoc.WriteAll()
+	if err != nil {
+		t.Error(err)
+	}
+	if string(e) != string(d) {
+		t.Error("did not sort the expected way")
+	}
 }
