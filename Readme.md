@@ -30,7 +30,7 @@ func TestRead(t *testing.T) {
         t.FailNow()
         return
     }
-    file, err := os.Open(fmt.Sprintf("%s/examples/sample.wsv", dir))
+    file, err := os.Open("testdata/sample.wsv")
     if err != nil {
         t.Error(err)
         t.FailNow()

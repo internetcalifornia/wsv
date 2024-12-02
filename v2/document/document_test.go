@@ -1,7 +1,6 @@
 package document
 
 import (
-	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -24,7 +23,6 @@ func TestCreateTabularDocument(t *testing.T) {
 	line.Append("Age")
 	line.Append("Favorite Color")
 	line.Append("Preferred \"Nickname\" Name")
-	fmt.Printf("%+v\n", line)
 	_, err = line.Validate()
 	if err != nil {
 		t.Error(err)

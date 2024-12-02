@@ -189,16 +189,13 @@ func (line *documentLine) Compare(fieldName string, cmpLine DocumentLine, desc b
 	}
 	a, err := line.FieldByName(fieldName)
 	if err != nil {
-		fmt.Println("error getting field by name, for A")
 		return -1
 	}
 	b, err := cmpLine.FieldByName(fieldName)
 	if err != nil {
-		fmt.Println("error getting field by name, for B")
 		return 1
 	}
 	if aint, err := strconv.ParseInt(a.Value, 10, utils.PtrSize()); err == nil {
-		fmt.Println("converted to int", "A int", aint, a.Value)
 		if bint, err := strconv.ParseInt(b.Value, 10, utils.PtrSize()); err == nil {
 			if aint < bint {
 				if desc {
@@ -216,7 +213,6 @@ func (line *documentLine) Compare(fieldName string, cmpLine DocumentLine, desc b
 				return 0
 			}
 		}
-		fmt.Println("converted to int but B int failed parsing", err)
 		return 1
 	}
 	if a.Value < b.Value {

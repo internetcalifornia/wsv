@@ -166,7 +166,6 @@ func (doc *Document) SortBy(sortOptions ...SortOption) error {
 	}
 
 	for _, sort := range sortOptions {
-		fmt.Println("sorting by", "field", sort.FieldName)
 		slices.SortFunc(doc.lines, func(a DocumentLine, b DocumentLine) int {
 			return a.Compare(sort.FieldName, b, sort.Desc)
 		})

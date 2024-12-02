@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/internetcalifornia/wsv/v2/document"
 	doc "github.com/internetcalifornia/wsv/v2/document"
 	"github.com/internetcalifornia/wsv/v2/reader"
 	"github.com/internetcalifornia/wsv/v2/utils"
@@ -177,7 +178,6 @@ func TestReadColumnAndDataWithSpaces(t *testing.T) {
 }
 
 func TestParseDataWithEmoji(t *testing.T) {
-
 	fields, err := reader.ParseLine(1, []byte("France						Paris	            🇫🇷			  \"The Eiffel Tower was built for the 1889 World's Fair.\"/\"It was almost torn down afterwards.\""))
 	if err != nil {
 		t.Error(err)
@@ -658,7 +658,6 @@ func TestParseLineNullValue(t *testing.T) {
 		t.Errorf("Parse line expected 2 record but got %+v (%d)", r, len(r))
 		return
 	}
-	// t.Errorf("%+v", r)
 	if !r[0].IsNull || r[0].Value != "" {
 		t.Error("expected field 1 to be null but got", r[0])
 	}
@@ -782,7 +781,6 @@ func TestParseEmptyComment(t *testing.T) {
 }
 
 func TestParseCommentWithJustSpaces(t *testing.T) {
-
 	line := `john hungry #      `
 	r, err := reader.ParseLine(1, []byte(line))
 	if err != nil {
@@ -989,13 +987,7 @@ func TestNewLineParsing(t *testing.T) {
 }
 
 func TestReadDataWithNewLineInValue(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/data-with-new-line-in-value.wsv", dir))
+	file, err := os.Open("testdata/data-with-new-line-in-value.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1062,13 +1054,7 @@ func TestReadDataWithNewLineInValue(t *testing.T) {
 }
 
 func TestReadDataWithSpaces(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/data-with-spaces.wsv", dir))
+	file, err := os.Open("testdata/data-with-spaces.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1144,14 +1130,7 @@ func TestReadDataWithSpaces(t *testing.T) {
 }
 
 func TestReadDataWithoutSpace(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/data-without-spaces.wsv", dir))
+	file, err := os.Open("testdata/data-without-spaces.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1227,14 +1206,7 @@ func TestReadDataWithoutSpace(t *testing.T) {
 }
 
 func TestReadOmittedColumnsToNull(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/omitted-columns-to-null.wsv", dir))
+	file, err := os.Open("testdata/omitted-columns-to-null.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1310,14 +1282,7 @@ func TestReadOmittedColumnsToNull(t *testing.T) {
 }
 
 func TestReadSimpleWithTabs(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/simple-with-tabs.wsv", dir))
+	file, err := os.Open("testdata/simple-with-tabs.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1438,14 +1403,7 @@ func TestReadSimpleWithTabs(t *testing.T) {
 }
 
 func TestReadWithComments(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/with-comments.wsv", dir))
+	file, err := os.Open("testdata/with-comments.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1549,14 +1507,7 @@ func TestReadWithComments(t *testing.T) {
 }
 
 func TestReadWithCEmptyLinesAndComments(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/with-empty-lines-and-comments.wsv", dir))
+	file, err := os.Open("testdata/with-empty-lines-and-comments.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1692,14 +1643,7 @@ func TestReadWithCEmptyLinesAndComments(t *testing.T) {
 }
 
 func TestReadInvalidCommentPlacementDueToOmittedFields(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/invalid-comment-placement-due-to-omitted-fields.wsv", dir))
+	file, err := os.Open("testdata/invalid-comment-placement-due-to-omitted-fields.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1765,14 +1709,7 @@ func TestReadInvalidCommentPlacementDueToOmittedFields(t *testing.T) {
 }
 
 func TestReadComplexValues(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/complex-values.wsv", dir))
+	file, err := os.Open("testdata/complex-values.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -2640,14 +2577,7 @@ func TestParseLineWithEmojisAndEscapedDoubleQuotesSurroundedByWhitespace(t *test
 }
 
 func TestReaderToDocument(t *testing.T) {
-	dir, ok := os.LookupEnv("PROJECT_DIR")
-	if !ok {
-		t.Error("PROJECT_DIR env not FOUND")
-		t.FailNow()
-
-		return
-	}
-	file, err := os.Open(fmt.Sprintf("%s/examples/complex-values.wsv", dir))
+	file, err := os.Open("testdata/complex-values.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -2708,7 +2638,7 @@ func TestReaderToDocument(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	file, err = os.Create(fmt.Sprintf("%s/example-output/complex-output.wsv", dir))
+	file, err = os.Create("testdata/complex-output.wsv")
 	if err != nil {
 		t.Error(err)
 		return
@@ -2782,5 +2712,48 @@ func TestWriteComplexLine(t *testing.T) {
 	_, err = file.Write(data)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestReadingAndSortingNumberFields(t *testing.T) {
+	file, err := os.Open("testdata/unsorted-numbers.wsv")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	r := reader.NewReader(file)
+	doc, err := r.ToDocument()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	doc.SortBy(document.SortOption{FieldName: "Line", Desc: false})
+	output, err := doc.WriteAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	exp := document.NewDocument()
+	exp.AppendValues("Line", "Color", "Last Voted as Favorite")
+	exp.AppendValues("1", "Red", "2022-10-29")
+	exp.AppendValues("2", "Green", "2023-10-01")
+	exp.AppendValues("3", "Purple", "2023-09-18")
+	exp.AppendValues("4", "Yellow", "2001-02-28")
+	exp.AppendValues("5", "Teal", "2012-01-22")
+	exp.AppendValues("6", "Blue", "2024-07-02")
+	exp.AppendValues("7", "Brown", "1992-08-05")
+	exp.AppendValues("8", "Orange", "2009-06-03")
+	exp.AppendValues("9", "Pink", "2003-04-08")
+	exp.AppendValues("10", "Fusia", "1963-09-08")
+
+	expDoc, err := exp.WriteAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if string(output) != string(expDoc) {
+		t.Error(string(output), "\nDoes not match\n", string(expDoc))
+		return
 	}
 }
